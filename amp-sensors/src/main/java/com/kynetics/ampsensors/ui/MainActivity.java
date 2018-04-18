@@ -1,12 +1,8 @@
-package com.kynetics.ampsensors;
-
-
+package com.kynetics.ampsensors.ui;
 
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentTransaction;
-import android.util.Log;
 import android.support.design.widget.NavigationView;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -15,25 +11,23 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.kynetics.ampsensors.R;
+import com.kynetics.ampsensors.device.DataType;
+import com.kynetics.ampsensors.device.DeviceManager;
+import com.kynetics.ampsensors.math.SensorsStreamConsumer;
+
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener{
+        implements NavigationView.OnNavigationItemSelectedListener {
 
-    String devicePath;
+    private DeviceManager currentDeviceManager = null;
+    private DataType currentDataType = null;
 
-
-    static {
-        System.loadLibrary("native-lib");
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-
-        devicePath = createDevice();
-        Log.d("received path device : ", devicePath);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -54,26 +48,36 @@ public class MainActivity extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        if (this.currentDeviceManager != null) {
+            currentDeviceManager.closedData();
+        }
+
+        super.onStop();
+    }
+
+    @Override
+    protected void onStart() {
+
+        super.onStart();
+        if (this.currentDeviceManager != null) {
+            currentDeviceManager.openDevice(currentDataType);
         }
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
         }
@@ -85,43 +89,44 @@ public class MainActivity extends AppCompatActivity
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
-        Fragment fragment = null;
+
         int id = item.getItemId();
+        PlotFragment fragment;
+        if (this.currentDeviceManager != null) {
+            currentDeviceManager.closedData();
+        }
 
-        if( id == R.id.nav_module) {
-       //     Log.d("module click", "ho cliccato su module");
-            fragment = new ModuleFragment();
-       //     Log.d("module click", "creo nuovo fragment");
-           displaySelectedFragment(fragment, devicePath);
-            }
-            else if(id == R.id.nav_raw) {
-                fragment = new RawFragment();
-                displaySelectedFragment(fragment, devicePath);
-            }
+        if (id == R.id.nav_module) {
+            switchFragment(new NormPlotFragment(), DataType.NORM_DATA);
 
-            DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-            drawer.closeDrawer(GravityCompat.START);
-            return true;
+        } else if (id == R.id.nav_raw) {
+            switchFragment(new VectorPlotFragment(), DataType.VECTOR_DATA);
+
+        } else if (id == R.id.nav_exit) {
+            if (this.currentDeviceManager != null) {
+
+                this.currentDeviceManager = null;
+                this.currentDataType = null;
+
+            }
+            android.os.Process.killProcess(android.os.Process.myPid());
+            System.exit(1);
+
+        }
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+
+        drawer.closeDrawer(GravityCompat.START);
+        return true;
     }
 
-
-
-    private void displaySelectedFragment(Fragment fragment, String path) {
-        String checkDestroy = destroyDevice();
-        Log.d("destroy device", checkDestroy);
-        Bundle bundle = new Bundle();
-        bundle.putString("path", path );
-        Log.d("path", path);
-        fragment.setArguments(bundle);
+    private void switchFragment(PlotFragment fragment, DataType dataType) {
+        SensorsStreamConsumer asc = new SensorsStreamConsumer(fragment);
+        this.currentDeviceManager = new DeviceManager(asc, asc);
+        this.currentDeviceManager.openDevice(dataType);
+        this.currentDataType = dataType;
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
         fragmentTransaction.replace(R.id.frame, fragment);
         fragmentTransaction.commit();
     }
-
-    public native String createDevice();
-
-    public native String destroyDevice();
-
 
 }
