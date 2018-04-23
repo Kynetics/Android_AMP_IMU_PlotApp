@@ -1,21 +1,19 @@
 package com.kynetics.ampsensors.device;
 
-import android.util.Log;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 
 public class DeviceManager {
-    private final StreamConsumer sc;
-    private final DeviceManagerAware dma;
-    private DeviceDescriptor dd;
+    private final StreamConsumer streamConsumer;
+    private final DeviceManagerAware deviceManagerAware;
+    private DeviceDescriptor deviceDescriptor;
     private FileChannel fileChannel;
 
     static {
         System.loadLibrary("native-lib");
     }
-
 
     static class DeviceDescriptor {
         public final int fileDescriptor;
@@ -27,46 +25,42 @@ public class DeviceManager {
         }
     }
 
-
-    public DeviceManager(StreamConsumer sc, DeviceManagerAware dma) {
-        this.sc = sc;
-        this.dma = dma;
-        dma.onDeviceManagerCreated(this);
+    public DeviceManager(StreamConsumer streamConsumer, DeviceManagerAware deviceManagerAware) {
+        this.streamConsumer = streamConsumer;
+        this.deviceManagerAware = deviceManagerAware;
+        deviceManagerAware.onDeviceManagerCreated(this);
     }
 
-    public void openDevice(DataType dt) {
-        assert this.dd == null;
+    public void closeDevice() {
+        if (this.deviceDescriptor != null) {
+            this.streamConsumer.onStreamClosing();
+            try {
+                fileChannel.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            this.closeDeviceNative(this.deviceDescriptor.fileDescriptor);
+            this.deviceDescriptor = null;
+            this.fileChannel = null;
+        }
+    }
+
+    private native void closeDeviceNative(int fileDescriptor);
+
+    public void openDevice(DataType dataType) {
+        assert this.deviceDescriptor == null;
         assert this.fileChannel == null;
-        this.dd = this.openDeviceNative();
-
+        this.deviceDescriptor = this.openDeviceNative();
         try {
-            this.fileChannel = new RandomAccessFile(this.dd.devicePath, "rw").getChannel();
-            Channels.newOutputStream(fileChannel).write(dt == DataType.VECTOR_DATA ? 1 : 0);
+            RandomAccessFile raf = new RandomAccessFile(this.deviceDescriptor.devicePath, "rw");
+            this.fileChannel = raf.getChannel();
+            Channels.newOutputStream(fileChannel).write(dataType == DataType.VECTOR_DATA ? 1 : 0);
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        this.sc.onStreamOpen(Channels.newInputStream(fileChannel), dt);
-        Log.d("print values : ", "debug1");
-
-        Log.d("print values : ", "debug3");
-
-
-    }
-
-    public void closedData() {
-        this.sc.onStreamClosing();
-        try {
-            fileChannel.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        this.closeDeviceNative(this.dd.fileDescriptor);
-        this.dd = null;
-        this.fileChannel = null;
+        this.streamConsumer.onStreamOpen(Channels.newInputStream(fileChannel), dataType);
     }
 
     private native DeviceDescriptor openDeviceNative();
 
-    private native void closeDeviceNative(int fd);
 }

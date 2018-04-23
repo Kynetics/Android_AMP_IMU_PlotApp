@@ -27,5 +27,4 @@
         android:text="@string/nav_header_title"
         android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
 
-
 </LinearLayout>

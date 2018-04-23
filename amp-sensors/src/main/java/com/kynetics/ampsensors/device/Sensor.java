@@ -5,11 +5,8 @@ import com.github.mikephil.charting.components.XAxis;
 import com.kynetics.ampsensors.ui.PlotFragment;
 
 public enum Sensor {
-
-
     ACC("accelerometer"), MAG("magnetometer"), GYR("gyroscope");
     private final String label;
-
 
     Sensor(String label) {
         this.label = label;
@@ -20,8 +17,6 @@ public enum Sensor {
     }
 
     public void configureAxis(XAxis xAxis) {
-
-
         switch (this) {
             case ACC:
                 configureAccAxis(xAxis);
@@ -34,8 +29,6 @@ public enum Sensor {
             case GYR:
                 configureAccAxis(xAxis);
                 break;
-
-
         }
     }
 

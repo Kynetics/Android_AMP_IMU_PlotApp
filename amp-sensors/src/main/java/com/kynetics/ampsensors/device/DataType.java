@@ -7,10 +7,8 @@ public enum DataType {
     private final int dimension;
     private static final int SIZE_OF_FLOAT = 4;
 
-
     DataType(int d) {
         this.dimension = d;
-
     }
 
     public int getBufferSize() {

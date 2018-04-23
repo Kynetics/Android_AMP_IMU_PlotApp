@@ -1,7 +1,6 @@
 package com.kynetics.ampsensors.device;
 
 import android.graphics.Color;
-
 import com.github.mikephil.charting.data.LineDataSet;
 
 public enum Coordinate {
@@ -14,8 +13,10 @@ public enum Coordinate {
         this.label = label;
     }
 
-    public String getLabel() {
-        return label;
+    private void _commonCFG(LineDataSet lineDataSet) {
+        lineDataSet.setValueTextSize(7);
+        lineDataSet.setDrawCircles(false);
+        lineDataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
     }
 
     public void configureDataSet(LineDataSet lineDataSet) {
@@ -50,9 +51,7 @@ public enum Coordinate {
         _commonCFG(lineDataSet);
     }
 
-    private void _commonCFG(LineDataSet lineDataSet) {
-        lineDataSet.setValueTextSize(7);
-        lineDataSet.setDrawCircles(false);
-        lineDataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+    public String getLabel() {
+        return label;
     }
 }

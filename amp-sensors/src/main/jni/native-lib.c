@@ -4,14 +4,13 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
-#include <stdint.h>
 #include <sys/ioctl.h>
 #include <poll.h>
 #include <signal.h>
 #include <stdlib.h>
 
 #define RPMSG_CREATE_EPT_IOCTL  _IOW(0xb5, 0x1, struct rpmsg_endpoint_info)
-
+#define RPMSG_DESTROY_EPT_IOCTL _IO(0xb5, 0x2)
 #define EPT_SRC     0x401
 #define EPT_DST     0x0
 
@@ -29,38 +28,47 @@ struct rpmsg_endpoint_info ep = {
 
 JNIEXPORT jobject JNICALL
 Java_com_kynetics_ampsensors_device_DeviceManager_openDeviceNative(JNIEnv *env, jobject instance) {
-
     const char *returnValue = "/dev/rpmsg0";
+    time_t t_end, t_start;
     jstring retstr = (*env)->NewStringUTF(env, returnValue);
-
     int fd_ctrldev, ret;
-    fd_ctrldev = open("/dev/rpmsg_ctrl0", O_RDONLY);
-
     jclass jcls = (*env)->FindClass(env,
                                     "com/kynetics/ampsensors/device/DeviceManager$DeviceDescriptor");
     jmethodID cstr = (*env)->GetMethodID(env, jcls, "<init>", "(ILjava/lang/String;)V");
 
-
+    fd_ctrldev = open("/dev/rpmsg_ctrl0", O_RDONLY);
     if (fd_ctrldev < 0) {
-        printf("Error opening /dev/rpmsg_ctrl0 %s \n", strerror(errno));
         return NULL;
     }
 
     ret = ioctl(fd_ctrldev, RPMSG_CREATE_EPT_IOCTL, &ep);
     if (ret < 0) {
-        printf("Error creating endpoint device: %s \n", strerror(errno));
         close(fd_ctrldev);
         return NULL;
     }
 
-
+    t_start = time(0);
+    while (access("/dev/rpmsg0", 0)) {
+        t_end = time(0);
+        if ((t_end - t_start) > 5) {
+            close(fd_ctrldev);
+            break;
+        }
+        usleep(500);
+    }
     jobject obj = (*env)->NewObject(env, jcls, cstr, fd_ctrldev, retstr);
+    close(fd_ctrldev);
     return obj;
-
 }
 
 JNIEXPORT void JNICALL
 Java_com_kynetics_ampsensors_device_DeviceManager_closeDeviceNative(JNIEnv *env, jobject instance,
                                                                     jint fd) {
+    int fd_ept, ret;
+    fd_ept = open("/dev/rpmsg0", O_RDONLY);
+    ret = ioctl(fd_ept, RPMSG_DESTROY_EPT_IOCTL);
+    if (ret < 0)
+        printf("Error destroying endpoint: %s\n", strerror(errno));
+    close(fd_ept);
     close(fd);
 }

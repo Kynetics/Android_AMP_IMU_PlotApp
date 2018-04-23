@@ -1,6 +1,5 @@
 package com.kynetics.ampsensors.device;
 
 public interface DeviceManagerAware {
-
-    void onDeviceManagerCreated(DeviceManager dm);
+    void onDeviceManagerCreated(DeviceManager deviceManager);
 }

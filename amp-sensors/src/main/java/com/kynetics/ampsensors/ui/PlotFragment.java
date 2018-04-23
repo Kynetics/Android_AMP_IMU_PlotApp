@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
@@ -25,7 +26,6 @@ public abstract class PlotFragment extends Fragment implements PlotUpdate {
     private LineChart lineChartGyro;
     public static final int PLOT_POINTS = 30;
 
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -41,7 +41,8 @@ public abstract class PlotFragment extends Fragment implements PlotUpdate {
         for (int s = 0; s < charts.size(); s++) {
             LineChart chart = charts.get(s);
             Sensor.values()[s].configureAxis(chart.getXAxis());
-
+            chart.setVisibleYRangeMaximum(10, YAxis.AxisDependency.LEFT);
+            chart.getDescription().setEnabled(false);
             LineData lineData = new LineData();
             for (int i = 0; i < getDataType().getDimension(); i++) {
                 LineDataSet lineDataSet = new LineDataSet(new ArrayList<>(), Sensor.values()[s].getLabel() + " " + Coordinate.values()[i].getLabel());
@@ -58,10 +59,18 @@ public abstract class PlotFragment extends Fragment implements PlotUpdate {
 
     protected abstract DataType getDataType();
 
+    @Override
+    public void onDataReady(Entry entry, Sensor sensor, Coordinate coordinate) {
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                _onDataReady(entry, sensor, coordinate);
+            }
+        });
+    }
+
     private void _onDataReady(Entry entry, Sensor sensor, Coordinate coordinate) {
-
         LineChart chart = null;
-
         switch (sensor) {
             case ACC:
                 chart = this.lineChartAcc;
@@ -72,7 +81,6 @@ public abstract class PlotFragment extends Fragment implements PlotUpdate {
             case GYR:
                 chart = this.lineChartGyro;
                 break;
-
         }
         ILineDataSet lineDataSet = chart.getLineData().getDataSetByIndex(coordinate.ordinal());
         lineDataSet.removeFirst();
@@ -80,16 +88,6 @@ public abstract class PlotFragment extends Fragment implements PlotUpdate {
         chart.getLineData().notifyDataChanged();
         chart.notifyDataSetChanged();
         chart.invalidate();
-    }
-
-    @Override
-    public void onDataReady(Entry entry, Sensor sensor, Coordinate coordinate) {
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                _onDataReady(entry, sensor, coordinate);
-            }
-        });
     }
 
 }

@@ -33,20 +33,18 @@ public class SensorsStreamConsumer implements StreamConsumer, DeviceManagerAware
     }
 
     @Override
-    public void onDeviceManagerCreated(DeviceManager dm) {
-        this.deviceManager = dm;
-
-
+    public void onDeviceManagerCreated(DeviceManager deviceManager) {
+        this.deviceManager = deviceManager;
     }
 
     @Override
-    public void onStreamOpen(InputStream i, DataType dt) {
+    public void onStreamOpen(InputStream inputStream, DataType dataType) {
         assert deviceManager != null;
-        assert inputStream == null;
-        this.inputStream = i;
-        this.buf = new byte[dt.getBufferSize()];
-        this.floatArray = new float[dt.getSampleCount()];
-        this.dataMatrix = new float[Sensor.values().length][dt.getDimension()];
+        assert this.inputStream == null;
+        this.inputStream = inputStream;
+        this.buf = new byte[dataType.getBufferSize()];
+        this.floatArray = new float[dataType.getSampleCount()];
+        this.dataMatrix = new float[Sensor.values().length][dataType.getDimension()];
         this.cdl = new CountDownLatch(1);
         running = true;
         new Thread(new Runnable() {
@@ -59,7 +57,6 @@ public class SensorsStreamConsumer implements StreamConsumer, DeviceManagerAware
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-
                 }
                 cdl.countDown();
             }
@@ -84,7 +81,7 @@ public class SensorsStreamConsumer implements StreamConsumer, DeviceManagerAware
         fb.get(floatArray);
     }
 
-    private void trasformData() {
+    private void transformData() {
         for (int sensorIndex = 0; sensorIndex < dataMatrix.length; sensorIndex++) {
             for (int coordinateIndex = 0; coordinateIndex < dataMatrix[sensorIndex].length; coordinateIndex++) {
                 dataMatrix[sensorIndex][coordinateIndex] = floatArray[sensorIndex * dataMatrix[sensorIndex].length + coordinateIndex];
@@ -94,12 +91,11 @@ public class SensorsStreamConsumer implements StreamConsumer, DeviceManagerAware
 
     private void doStep() throws IOException {
         this.readChunk();
-        this.trasformData();
+        this.transformData();
         for (int j = 0; j < dataMatrix.length; j++) {
             for (int i = 0; i < dataMatrix[j].length; i++) {
                 this.plotUpdate.onDataReady(new Entry(index, dataMatrix[j][i]), Sensor.values()[j], Coordinate.values()[i]);
             }
-
         }
         index++;
     }
