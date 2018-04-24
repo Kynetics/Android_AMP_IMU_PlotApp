@@ -2,18 +2,25 @@ package com.kynetics.ampsensors.device;
 
 import android.graphics.Color;
 import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
 import com.kynetics.ampsensors.ui.PlotFragment;
 
 public enum Sensor {
-    ACC("accelerometer"), MAG("magnetometer"), GYR("gyroscope");
+    ACC("accelerometer", "(g)"), MAG("magnetometer", "(µT)"), GYR("gyroscope", "(dps)");
     private final String label;
+    private final String unit;
 
-    Sensor(String label) {
+    Sensor(String label, String unit) {
         this.label = label;
+        this.unit = unit;
     }
 
     public String getLabel() {
         return label;
+    }
+
+    public String getUnit(){
+        return unit;
     }
 
     public void configureAxis(XAxis xAxis) {

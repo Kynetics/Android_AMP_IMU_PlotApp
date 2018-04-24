@@ -1,5 +1,6 @@
 package com.kynetics.ampsensors.ui;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -45,7 +46,7 @@ public abstract class PlotFragment extends Fragment implements PlotUpdate {
             chart.getDescription().setEnabled(false);
             LineData lineData = new LineData();
             for (int i = 0; i < getDataType().getDimension(); i++) {
-                LineDataSet lineDataSet = new LineDataSet(new ArrayList<>(), Sensor.values()[s].getLabel() + " " + Coordinate.values()[i].getLabel());
+                LineDataSet lineDataSet = new LineDataSet(new ArrayList<>(), Sensor.values()[s].getLabel() + " " + Coordinate.values()[i].getLabel()+ " " + Sensor.values()[s].getUnit());
                 Coordinate.values()[i].configureDataSet(lineDataSet);
                 for (int k = 0; k < PLOT_POINTS; k++) {
                     lineDataSet.addEntry(new Entry(k, 0));
@@ -61,12 +62,15 @@ public abstract class PlotFragment extends Fragment implements PlotUpdate {
 
     @Override
     public void onDataReady(Entry entry, Sensor sensor, Coordinate coordinate) {
-        getActivity().runOnUiThread(new Runnable() {
+        Activity parentActivity = getActivity();
+        if(parentActivity != null){
+             parentActivity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 _onDataReady(entry, sensor, coordinate);
             }
         });
+        }
     }
 
     private void _onDataReady(Entry entry, Sensor sensor, Coordinate coordinate) {

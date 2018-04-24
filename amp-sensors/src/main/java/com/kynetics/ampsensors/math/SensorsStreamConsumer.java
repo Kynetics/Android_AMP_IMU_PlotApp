@@ -1,5 +1,7 @@
 package com.kynetics.ampsensors.math;
 
+import android.util.Log;
+
 import com.github.mikephil.charting.data.Entry;
 import com.kynetics.ampsensors.device.Coordinate;
 import com.kynetics.ampsensors.device.DataType;
@@ -9,17 +11,20 @@ import com.kynetics.ampsensors.device.Sensor;
 import com.kynetics.ampsensors.device.StreamConsumer;
 import com.kynetics.ampsensors.ui.PlotFragment;
 import com.kynetics.ampsensors.ui.PlotUpdate;
+
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 
 public class SensorsStreamConsumer implements StreamConsumer, DeviceManagerAware {
 
     private DeviceManager deviceManager = null;
-    private InputStream inputStream = null;
+    private DataInputStream inputStream = null;
     private byte[] buf = null;
     private float[] floatArray = null;
     private float[][] dataMatrix = null;
@@ -41,7 +46,7 @@ public class SensorsStreamConsumer implements StreamConsumer, DeviceManagerAware
     public void onStreamOpen(InputStream inputStream, DataType dataType) {
         assert deviceManager != null;
         assert this.inputStream == null;
-        this.inputStream = inputStream;
+        this.inputStream = new DataInputStream(inputStream);
         this.buf = new byte[dataType.getBufferSize()];
         this.floatArray = new float[dataType.getSampleCount()];
         this.dataMatrix = new float[Sensor.values().length][dataType.getDimension()];
@@ -75,11 +80,14 @@ public class SensorsStreamConsumer implements StreamConsumer, DeviceManagerAware
     }
 
     private void readChunk() throws IOException {
-        this.inputStream.read(buf);
+
+        inputStream.readFully(buf);
         ByteBuffer buffer = ByteBuffer.wrap(buf).order(ByteOrder.LITTLE_ENDIAN);
         FloatBuffer fb = buffer.asFloatBuffer();
         fb.get(floatArray);
     }
+
+
 
     private void transformData() {
         for (int sensorIndex = 0; sensorIndex < dataMatrix.length; sensorIndex++) {

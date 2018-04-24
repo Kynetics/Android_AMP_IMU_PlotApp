@@ -11,9 +11,6 @@ public class DeviceManager {
     private DeviceDescriptor deviceDescriptor;
     private FileChannel fileChannel;
 
-    static {
-        System.loadLibrary("native-lib");
-    }
 
     static class DeviceDescriptor {
         public final int fileDescriptor;
@@ -48,17 +45,18 @@ public class DeviceManager {
     private native void closeDeviceNative(int fileDescriptor);
 
     public void openDevice(DataType dataType) {
-        assert this.deviceDescriptor == null;
-        assert this.fileChannel == null;
-        this.deviceDescriptor = this.openDeviceNative();
-        try {
-            RandomAccessFile raf = new RandomAccessFile(this.deviceDescriptor.devicePath, "rw");
-            this.fileChannel = raf.getChannel();
-            Channels.newOutputStream(fileChannel).write(dataType == DataType.VECTOR_DATA ? 1 : 0);
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (this.deviceDescriptor == null) {
+            assert this.fileChannel == null;
+            this.deviceDescriptor = this.openDeviceNative();
+            try {
+                RandomAccessFile raf = new RandomAccessFile(this.deviceDescriptor.devicePath, "rw");
+                this.fileChannel = raf.getChannel();
+                Channels.newOutputStream(fileChannel).write(dataType == DataType.VECTOR_DATA ? 1 : 0);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            this.streamConsumer.onStreamOpen(Channels.newInputStream(fileChannel), dataType);
         }
-        this.streamConsumer.onStreamOpen(Channels.newInputStream(fileChannel), dataType);
     }
 
     private native DeviceDescriptor openDeviceNative();
