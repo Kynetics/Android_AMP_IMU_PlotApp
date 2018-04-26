@@ -72,8 +72,6 @@ public class MainActivity extends AppCompatActivity
         if (savedInstanceState == null){
             switchFragment(new NormPlotFragment(), DataType.NORM_DATA);
         }
-        drawer.closeDrawer(GravityCompat.START);
-        
 
         getWindow().getDecorView().setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_LAYOUT_STABLE
@@ -82,7 +80,6 @@ public class MainActivity extends AppCompatActivity
                         | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION // hide nav bar
                         | View.SYSTEM_UI_FLAG_FULLSCREEN // hide status bar
                         | View.SYSTEM_UI_FLAG_IMMERSIVE);
-
     }
 
     @Override
