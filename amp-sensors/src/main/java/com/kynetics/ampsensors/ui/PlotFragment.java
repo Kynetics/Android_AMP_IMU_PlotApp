@@ -63,7 +63,13 @@ public abstract class PlotFragment extends Fragment implements PlotUpdate {
             chart.getDescription().setEnabled(false);
             LineData lineData = new LineData();
             for (int i = 0; i < getDataType().getDimension(); i++) {
-                LineDataSet lineDataSet = new LineDataSet(new ArrayList<>(), Sensor.values()[s].getLabel() + " " + Coordinate.values()[i].getLabel()+ " " + Sensor.values()[s].getUnit());
+                LineDataSet lineDataSet = null;
+                if(this.getDataType().equals(DataType.NORM_DATA)){
+                    lineDataSet = new LineDataSet(new ArrayList<>(), Sensor.values()[s].getLabel() + " " + Sensor.values()[s].getUnit());
+                }
+                else {
+                    lineDataSet = new LineDataSet(new ArrayList<>(), Sensor.values()[s].getLabel() + " " + Coordinate.values()[i].getLabel() + " " + Sensor.values()[s].getUnit());
+                }
                 Coordinate.values()[i].configureDataSet(lineDataSet);
                 for (int k = 0; k < PLOT_POINTS; k++) {
                     lineDataSet.addEntry(new Entry(k, 0));
