@@ -18,7 +18,6 @@
 package com.kynetics.ampsensors.ui;
 
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
@@ -29,13 +28,11 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-
 import com.kynetics.ampsensors.R;
 import com.kynetics.ampsensors.device.DataType;
 import com.kynetics.ampsensors.device.DeviceManager;
 import com.kynetics.ampsensors.math.SensorsStreamConsumer;
 
-import static android.view.View.SYSTEM_UI_FLAG_IMMERSIVE;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -117,12 +114,6 @@ public class MainActivity extends AppCompatActivity
                         | View.SYSTEM_UI_FLAG_IMMERSIVE);
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
-    }
-
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
@@ -171,7 +162,6 @@ public class MainActivity extends AppCompatActivity
         this.currentDeviceManager = new DeviceManager(asc, asc);
         this.currentDeviceManager.openDevice(dataType);
         this.currentDataType = dataType;
-
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
         fragmentTransaction.replace(R.id.frame, fragment);
         fragmentTransaction.commit();
@@ -182,7 +172,25 @@ public class MainActivity extends AppCompatActivity
         super.onWindowFocusChanged(hasFocus);
     }
 
+    public void showDialog(View view){
+        CustomAlertDialog customAlertDialog = new CustomAlertDialog(this);
+//        customAlertDialog.show();
+    }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
+    }
 
-
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.info:
+                showDialog(getWindow().getDecorView());
+                return true;
+            default:
+                return true;
+        }
+    }
 }
