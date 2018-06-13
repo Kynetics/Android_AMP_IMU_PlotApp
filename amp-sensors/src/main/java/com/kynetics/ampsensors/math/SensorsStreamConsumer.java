@@ -17,8 +17,6 @@
 
 package com.kynetics.ampsensors.math;
 
-import android.util.Log;
-
 import com.github.mikephil.charting.data.Entry;
 import com.kynetics.ampsensors.device.Coordinate;
 import com.kynetics.ampsensors.device.DataType;
@@ -35,7 +33,6 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
-import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 
 public class SensorsStreamConsumer implements StreamConsumer, DeviceManagerAware {
@@ -103,7 +100,6 @@ public class SensorsStreamConsumer implements StreamConsumer, DeviceManagerAware
         FloatBuffer fb = buffer.asFloatBuffer();
         fb.get(floatArray);
     }
-
 
 
     private void transformData() {

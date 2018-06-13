@@ -28,10 +28,13 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+
 import com.kynetics.ampsensors.R;
+import com.kynetics.ampsensors.device.BootType;
 import com.kynetics.ampsensors.device.DataType;
 import com.kynetics.ampsensors.device.DeviceManager;
 import com.kynetics.ampsensors.math.SensorsStreamConsumer;
+import com.kynetics.ampsensors.math.StatisticsInfoConsumer;
 
 
 public class MainActivity extends AppCompatActivity
@@ -39,6 +42,8 @@ public class MainActivity extends AppCompatActivity
 
     private DeviceManager currentDeviceManager = null;
     private DataType currentDataType = null;
+    private BootType bootType = null;
+    private CustomAlertDialog customAlertDialog;
 
     static {
         System.loadLibrary("native-lib");
@@ -66,6 +71,8 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        this.customAlertDialog = new CustomAlertDialog(this);
+
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -84,9 +91,13 @@ public class MainActivity extends AppCompatActivity
                 exit();
             }
         });
-        if (savedInstanceState == null){
-            switchFragment(new NormPlotFragment(), DataType.NORM_DATA);
+
+        this.bootType = BootType.ON_START;
+
+        if (savedInstanceState == null) {
+            switchFragment(new NormPlotFragment(), DataType.NORM_DATA, this.bootType);
         }
+
 
         View decorView = getWindow().getDecorView();
         decorView.setOnSystemUiVisibilityChangeListener
@@ -98,8 +109,8 @@ public class MainActivity extends AppCompatActivity
                                     View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                                             | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                                             | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION // hide nav bar
-                                            | View.SYSTEM_UI_FLAG_FULLSCREEN // hide status bar
+                                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                                            | View.SYSTEM_UI_FLAG_FULLSCREEN
                                             | View.SYSTEM_UI_FLAG_IMMERSIVE);
                         }
                     }
@@ -112,6 +123,7 @@ public class MainActivity extends AppCompatActivity
                         | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                         | View.SYSTEM_UI_FLAG_FULLSCREEN
                         | View.SYSTEM_UI_FLAG_IMMERSIVE);
+
     }
 
     @SuppressWarnings("StatementWithEmptyBody")
@@ -129,9 +141,9 @@ public class MainActivity extends AppCompatActivity
             currentDataType = null;
         }
         if (id == R.id.nav_module) {
-            switchFragment(new NormPlotFragment(), DataType.NORM_DATA);
+            switchFragment(new NormPlotFragment(), DataType.NORM_DATA, BootType.ON_START);
         } else if (id == R.id.nav_raw) {
-            switchFragment(new VectorPlotFragment(), DataType.VECTOR_DATA);
+            switchFragment(new VectorPlotFragment(), DataType.VECTOR_DATA, BootType.ON_START);
         } else if (id == R.id.nav_exit) {
             this.exit();
         }
@@ -142,8 +154,10 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     protected void onStart() {
+
         if (this.currentDeviceManager != null) {
-                currentDeviceManager.openDevice(currentDataType);
+            this.bootType = BootType.ON_RESUME;
+            currentDeviceManager.openDevice(currentDataType, this.bootType);
         }
         super.onStart();
 
@@ -157,11 +171,13 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    private void switchFragment(PlotFragment fragment, DataType dataType) {
+    private void switchFragment(PlotFragment fragment, DataType dataType, BootType bootType) {
         SensorsStreamConsumer asc = new SensorsStreamConsumer(fragment);
-        this.currentDeviceManager = new DeviceManager(asc, asc);
-        this.currentDeviceManager.openDevice(dataType);
+        StatisticsInfoConsumer ssc = new StatisticsInfoConsumer(this.customAlertDialog);
+        this.currentDeviceManager = new DeviceManager(asc, asc, ssc);
+        this.currentDeviceManager.openDevice(dataType, bootType);
         this.currentDataType = dataType;
+        this.bootType = BootType.ON_RESUME;
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
         fragmentTransaction.replace(R.id.frame, fragment);
         fragmentTransaction.commit();
@@ -172,9 +188,10 @@ public class MainActivity extends AppCompatActivity
         super.onWindowFocusChanged(hasFocus);
     }
 
-    public void showDialog(View view){
-        CustomAlertDialog customAlertDialog = new CustomAlertDialog(this);
-//        customAlertDialog.show();
+    public void showDialog(View view) {
+        this.customAlertDialog.setDrawable();
+        this.customAlertDialog.show();
+
     }
 
     @Override

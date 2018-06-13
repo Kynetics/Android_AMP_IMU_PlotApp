@@ -19,7 +19,6 @@ package com.kynetics.ampsensors.device;
 
 import android.graphics.Color;
 import com.github.mikephil.charting.components.XAxis;
-import com.github.mikephil.charting.components.YAxis;
 import com.kynetics.ampsensors.ui.PlotFragment;
 
 public enum Sensor {

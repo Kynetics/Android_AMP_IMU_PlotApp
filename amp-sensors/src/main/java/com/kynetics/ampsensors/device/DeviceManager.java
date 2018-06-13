@@ -17,6 +17,7 @@
 
 package com.kynetics.ampsensors.device;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.Channels;
@@ -26,53 +27,81 @@ public class DeviceManager {
     private final StreamConsumer streamConsumer;
     private final DeviceManagerAware deviceManagerAware;
     private DeviceDescriptor deviceDescriptor;
-    private FileChannel fileChannel;
+    private FileChannel fileChannelImu;
+    private FileChannel fileChannelStat;
+    private InfoConsumer infoConsumer;
 
 
     static class DeviceDescriptor {
         public final int fileDescriptor;
-        public final String devicePath;
+        public final String devicePathImu;
+        public final String devicePathStat;
 
-        public DeviceDescriptor(int fileDescriptor, String devicePath) {
+        public DeviceDescriptor(int fileDescriptor, String devicePathImu, String devicePathStat) {
             this.fileDescriptor = fileDescriptor;
-            this.devicePath = devicePath;
+            this.devicePathImu = devicePathImu;
+            this.devicePathStat = devicePathStat;
         }
     }
 
-    public DeviceManager(StreamConsumer streamConsumer, DeviceManagerAware deviceManagerAware) {
+
+    public DeviceManager(StreamConsumer streamConsumer, DeviceManagerAware deviceManagerAware, InfoConsumer infoConsumer) {
         this.streamConsumer = streamConsumer;
         this.deviceManagerAware = deviceManagerAware;
         deviceManagerAware.onDeviceManagerCreated(this);
+        this.infoConsumer = infoConsumer;
     }
 
     public void closeDevice() {
         if (this.deviceDescriptor != null) {
             this.streamConsumer.onStreamClosing();
+            this.infoConsumer.onStreamClosing();
             try {
-                fileChannel.close();
+                fileChannelImu.close();
+                fileChannelStat.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
             this.closeDeviceNative(this.deviceDescriptor.fileDescriptor);
             this.deviceDescriptor = null;
-            this.fileChannel = null;
+            this.fileChannelImu = null;
+            this.fileChannelStat = null;
         }
     }
 
     private native void closeDeviceNative(int fileDescriptor);
 
-    public void openDevice(DataType dataType) {
+    public void openDevice(DataType dataType, BootType bootType) {
         if (this.deviceDescriptor == null) {
-            assert this.fileChannel == null;
+            assert this.fileChannelImu == null;
+            assert this.fileChannelStat == null;
             this.deviceDescriptor = this.openDeviceNative();
             try {
-                RandomAccessFile raf = new RandomAccessFile(this.deviceDescriptor.devicePath, "rw");
-                this.fileChannel = raf.getChannel();
-                Channels.newOutputStream(fileChannel).write(dataType == DataType.VECTOR_DATA ? 1 : 0);
+                /*Channel for Imu*/
+                RandomAccessFile rafImu = new RandomAccessFile(this.deviceDescriptor.devicePathImu, "rw");
+                this.fileChannelImu = rafImu.getChannel();
+                String dataTypeString = ((dataType == DataType.VECTOR_DATA) ? "VECTOR" : "NORM");
+                byte[] byteArrayDataType = new byte[10];
+                System.arraycopy(dataTypeString.getBytes(), 0, byteArrayDataType, 0, dataTypeString.length());
+                byte[] byteArrayBootType = new byte[1];
+                byteArrayBootType[0] = (byte) ((bootType == BootType.ON_START) ? 1 : 0);
+                ByteArrayOutputStream outByteArray = new ByteArrayOutputStream();
+                outByteArray.write(byteArrayDataType);
+                outByteArray.write(byteArrayBootType);
+
+                byte bigByte[] = outByteArray.toByteArray();
+                Channels.newOutputStream(fileChannelImu).write(bigByte);
+
+                /*Channel for Statistics*/
+                RandomAccessFile rafStat = new RandomAccessFile(this.deviceDescriptor.devicePathStat, "r");
+                this.fileChannelStat = rafStat.getChannel();
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            this.streamConsumer.onStreamOpen(Channels.newInputStream(fileChannel), dataType);
+            this.infoConsumer.onStreamOpen(Channels.newInputStream(fileChannelStat));
+            this.streamConsumer.onStreamOpen(Channels.newInputStream(fileChannelImu), dataType);
+
         }
     }
 
