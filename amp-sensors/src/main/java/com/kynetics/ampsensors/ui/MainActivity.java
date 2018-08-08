@@ -17,7 +17,10 @@
 
 package com.kynetics.ampsensors.ui;
 
+import android.content.Context;
+import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
@@ -25,16 +28,22 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
 import com.kynetics.ampsensors.R;
+import com.kynetics.ampsensors.device.BoardType;
 import com.kynetics.ampsensors.device.BootType;
 import com.kynetics.ampsensors.device.DataType;
 import com.kynetics.ampsensors.device.DeviceManager;
+import com.kynetics.ampsensors.device.InputConsumer;
+import com.kynetics.ampsensors.math.SensorInputConsumer;
 import com.kynetics.ampsensors.math.SensorsStreamConsumer;
 import com.kynetics.ampsensors.math.StatisticsInfoConsumer;
+
+import java.util.Iterator;
 
 
 public class MainActivity extends AppCompatActivity
@@ -44,6 +53,12 @@ public class MainActivity extends AppCompatActivity
     private DataType currentDataType = null;
     private BootType bootType = null;
     private CustomAlertDialog customAlertDialog;
+    private SensorManager sensorManager;
+    private android.hardware.Sensor accSensor;
+    private android.hardware.Sensor magSensor;
+    private android.hardware.Sensor gyroSensor;
+    public BoardType boardType;
+
 
     static {
         System.loadLibrary("native-lib");
@@ -51,7 +66,7 @@ public class MainActivity extends AppCompatActivity
 
     private void exit() {
         if (this.currentDeviceManager != null) {
-            this.currentDeviceManager.closeDevice();
+            this.currentDeviceManager.closeDevice(this.boardType);
             this.currentDataType = null;
         }
         android.os.Process.killProcess(android.os.Process.myPid());
@@ -71,7 +86,18 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        this.customAlertDialog = new CustomAlertDialog(this);
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        accSensor = sensorManager.getDefaultSensor(android.hardware.Sensor.TYPE_ACCELEROMETER);
+        magSensor = sensorManager.getDefaultSensor(android.hardware.Sensor.TYPE_MAGNETIC_FIELD);
+        gyroSensor = sensorManager.getDefaultSensor(android.hardware.Sensor.TYPE_GYROSCOPE);
+
+
+        String testSensor = getSensorInfo(sensorManager);
+        this.boardType = testSensor.equals("") ? BoardType.D : BoardType.ULP;
+        Log.d("MainActivity", "board type "+boardType);
+        this.customAlertDialog = new CustomAlertDialog(this, boardType);
+
+
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -95,7 +121,9 @@ public class MainActivity extends AppCompatActivity
         this.bootType = BootType.ON_START;
 
         if (savedInstanceState == null) {
-            switchFragment(new NormPlotFragment(), DataType.NORM_DATA, this.bootType);
+//            switchFragment(new NormPlotFragment(), DataType.NORM_DATA, this.bootType, this.boardType);
+            switchFragment(new VectorPlotFragment(), DataType.VECTOR_DATA, this.bootType, this.boardType);
+
         }
 
 
@@ -126,6 +154,7 @@ public class MainActivity extends AppCompatActivity
 
     }
 
+
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
@@ -136,14 +165,14 @@ public class MainActivity extends AppCompatActivity
             return true;
         }
         if (this.currentDeviceManager != null) {
-            currentDeviceManager.closeDevice();
+            currentDeviceManager.closeDevice(this.boardType);
             currentDeviceManager = null;
             currentDataType = null;
         }
         if (id == R.id.nav_module) {
-            switchFragment(new NormPlotFragment(), DataType.NORM_DATA, BootType.ON_START);
+            switchFragment(new NormPlotFragment(), DataType.NORM_DATA, BootType.ON_START, this.boardType);
         } else if (id == R.id.nav_raw) {
-            switchFragment(new VectorPlotFragment(), DataType.VECTOR_DATA, BootType.ON_START);
+            switchFragment(new VectorPlotFragment(), DataType.VECTOR_DATA, BootType.ON_START, this.boardType);
         } else if (id == R.id.nav_exit) {
             this.exit();
         }
@@ -157,7 +186,7 @@ public class MainActivity extends AppCompatActivity
 
         if (this.currentDeviceManager != null) {
             this.bootType = BootType.ON_RESUME;
-            currentDeviceManager.openDevice(currentDataType, this.bootType);
+            currentDeviceManager.openDevice(currentDataType, this.bootType, this.boardType);
         }
         super.onStart();
 
@@ -167,15 +196,17 @@ public class MainActivity extends AppCompatActivity
     protected void onStop() {
         super.onStop();
         if (this.currentDeviceManager != null) {
-            this.currentDeviceManager.closeDevice();
+            this.currentDeviceManager.closeDevice( this.boardType);
         }
     }
 
-    private void switchFragment(PlotFragment fragment, DataType dataType, BootType bootType) {
+    private void switchFragment(PlotFragment fragment, DataType dataType, BootType bootType, BoardType boardType) {
+        Log.d("board", "switchFragment "+boardType);
         SensorsStreamConsumer asc = new SensorsStreamConsumer(fragment);
         StatisticsInfoConsumer ssc = new StatisticsInfoConsumer(this.customAlertDialog);
-        this.currentDeviceManager = new DeviceManager(asc, asc, ssc);
-        this.currentDeviceManager.openDevice(dataType, bootType);
+        SensorInputConsumer sensorInputConsumer = new SensorInputConsumer(fragment, sensorManager, accSensor, magSensor, gyroSensor);
+        this.currentDeviceManager = new DeviceManager(asc, asc, ssc, sensorInputConsumer);
+        this.currentDeviceManager.openDevice(dataType, bootType, boardType);
         this.currentDataType = dataType;
         this.bootType = BootType.ON_RESUME;
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
@@ -209,5 +240,16 @@ public class MainActivity extends AppCompatActivity
             default:
                 return true;
         }
+    }
+
+    private String getSensorInfo(SensorManager sensorManager) {
+        Iterator iterator = sensorManager.getSensorList(android.hardware.Sensor.TYPE_ALL).iterator();
+        android.hardware.Sensor sensor;
+        String s = "";
+        while (iterator.hasNext()) {
+            sensor = (android.hardware.Sensor)iterator.next();
+            s = s + sensor.getName() + " MADE BY " + sensor.getVendor() + "\n";
+        }
+        return s;
     }
 }

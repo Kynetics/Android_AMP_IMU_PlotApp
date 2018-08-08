@@ -39,6 +39,8 @@ import com.github.mikephil.charting.formatter.IAxisValueFormatter;
 import com.github.mikephil.charting.formatter.PercentFormatter;
 import com.github.mikephil.charting.utils.ColorTemplate;
 import com.kynetics.ampsensors.R;
+import com.kynetics.ampsensors.device.BoardType;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,10 +64,12 @@ public class CustomAlertDialog extends Dialog implements AlertDialogUpdate, andr
     LinearLayout linlaHeaderProgress;
     private final String PIE_CHART_LABEL = "% TIME";
     private final String HORIZONTAL_BAR_CHART_LABEL = "queue's messages update";
+    private BoardType boardType;
 
-    protected CustomAlertDialog(Activity activity) {
+    protected CustomAlertDialog(Activity activity, BoardType boardType) {
         super(activity);
         this.activity = activity;
+        this.boardType = boardType;
     }
 
     @Override
@@ -82,8 +86,10 @@ public class CustomAlertDialog extends Dialog implements AlertDialogUpdate, andr
         statStatus = findViewById(R.id.status_stat);
         imuName = findViewById(R.id.name_imu);
         imuStatus = findViewById(R.id.status_imu);
-        horizontalBarChart = findViewById(R.id.horizontal_chart);
-        horizontalBarChart.setVisibility(View.GONE);
+        if(boardType.equals(BoardType.D)) {
+            horizontalBarChart = findViewById(R.id.horizontal_chart);
+            horizontalBarChart.setVisibility(View.GONE);
+        }
         pieChart = findViewById(R.id.pie_chart);
         pieChart.setUsePercentValues(true);
         pieChart.setVisibility(View.GONE);
@@ -111,15 +117,17 @@ public class CustomAlertDialog extends Dialog implements AlertDialogUpdate, andr
         if (drawable) {
             linlaHeaderProgress.setVisibility(View.GONE);
             pieChart.setVisibility(View.VISIBLE);
-            horizontalBarChart.setVisibility(View.VISIBLE);
+            if(boardType.equals(BoardType.D)) {
+                horizontalBarChart.setVisibility(View.VISIBLE);
+            }
             setTaskNameAndStatus(stringArray);
 
-            ArrayList<BarEntry> entries = new ArrayList<>();
-            entries.add(new BarEntry(3, (int) queue[0]));
-            for(BarEntry e : entries){
-                Log.d("entry barchart", ""+e);
+
+            if(boardType.equals(BoardType.D)) {
+                ArrayList<BarEntry> entries = new ArrayList<>();
+                entries.add(new BarEntry(3, (int) queue[0]));
+                setHorizontalBarChart(entries, queue[1]);
             }
-            setHorizontalBarChart(entries, queue[1]);
 
             PieDataSet set = new PieDataSet(retListPieChart, PIE_CHART_LABEL);
             setPieChart(set);

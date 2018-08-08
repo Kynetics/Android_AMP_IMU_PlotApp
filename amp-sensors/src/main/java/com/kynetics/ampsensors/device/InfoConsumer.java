@@ -20,6 +20,6 @@ package com.kynetics.ampsensors.device;
 import java.io.InputStream;
 
 public interface InfoConsumer {
-    void onStreamOpen(InputStream inputStream);
+    void onStreamOpen(InputStream inputStream, BoardType boardType);
     void onStreamClosing();
 }

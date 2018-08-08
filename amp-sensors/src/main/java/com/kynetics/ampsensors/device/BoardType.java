@@ -15,15 +15,8 @@
  *               along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.kynetics.ampsensors.ui;
+package com.kynetics.ampsensors.device;
 
-import com.github.mikephil.charting.data.Entry;
-import com.kynetics.ampsensors.device.Coordinate;
-import com.kynetics.ampsensors.device.Sensor;
-
-import java.util.List;
-
-public interface PlotUpdate {
-    void onDataReady(List<Entry> entry, Sensor sensor, Coordinate[] coordinate);
-    default void onDataReady(PlotFragment.MyEntry entry){}
+public enum BoardType {
+     D, ULP
 }

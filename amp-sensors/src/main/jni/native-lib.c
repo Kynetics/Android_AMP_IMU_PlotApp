@@ -31,7 +31,8 @@
 #define RPMSG_DESTROY_EPT_IOCTL _IO(0xb5, 0x2)
 #define EPT_SRC_IMU     0x401
 #define EPT_SRC_STAT     0x402
-#define EPT_DST     0x0
+#define EPT_DST_INIT     0x15
+#define EPT_DST_D     0x0
 #define DEV_CREATE_TIMEOUT_SEC  5
 
 int sleepTime = 500000;
@@ -48,17 +49,27 @@ struct rpmsg_endpoint_info {
 struct rpmsg_endpoint_info ep_imu = {
         .name   = "rpmsg-openamp-demo-channel",
         .src    = EPT_SRC_IMU,
-        .dst    = EPT_DST,
+        .dst    = EPT_DST_INIT,
 };
 
 struct rpmsg_endpoint_info ep_stat = {
         .name = "rpmsg-openamp-demo-channel",
         .src = EPT_SRC_STAT,
-        .dst = EPT_DST,
+        .dst = EPT_DST_INIT,
 };
 
 JNIEXPORT jobject JNICALL
-Java_com_kynetics_ampsensors_device_DeviceManager_openDeviceNative(JNIEnv *env, jobject instance) {
+Java_com_kynetics_ampsensors_device_DeviceManager_openDeviceNative(JNIEnv *env, jobject instance, jobject boardType) {
+
+    jclass jniClassBoardType    = (*env)->FindClass(env, "com/kynetics/ampsensors/device/BoardType");
+    jfieldID jniEnumBoardType    = (*env)->GetStaticFieldID(env, jniClassBoardType , "D", "Lcom/kynetics/ampsensors/device/BoardType;");
+    jobject jniD = (*env)->GetStaticObjectField(env, jniClassBoardType, jniEnumBoardType);
+
+    if((*env)->IsSameObject(env, boardType, jniD)){
+        __android_log_print(ANDROID_LOG_INFO, "openDeviceNative", " is d \n");
+        ep_stat.dst = EPT_DST_D;
+    }
+
 
     time_t t_end, t_start;
 
@@ -155,3 +166,4 @@ Java_com_kynetics_ampsensors_device_DeviceManager_closeDeviceNative(JNIEnv *env,
     close(fd_ept_stat);
     close(fd);
 }
+

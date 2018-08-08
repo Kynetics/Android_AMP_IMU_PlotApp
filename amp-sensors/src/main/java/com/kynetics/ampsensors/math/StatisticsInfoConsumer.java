@@ -19,6 +19,7 @@ package com.kynetics.ampsensors.math;
 
 
 import com.github.mikephil.charting.data.PieEntry;
+import com.kynetics.ampsensors.device.BoardType;
 import com.kynetics.ampsensors.device.DeviceManager;
 import com.kynetics.ampsensors.device.DeviceManagerAware;
 import com.kynetics.ampsensors.device.InfoConsumer;
@@ -49,10 +50,11 @@ public class StatisticsInfoConsumer implements InfoConsumer, DeviceManagerAware 
     private String[] retStringArray = null;
     private int[] retQueueArray = null;
     private HashMap<String, Float> hashMap;
-    private final int BUF_LENGTH = 186;
+    private  int BUF_LENGTH ;
     private final int STRING_ARRAY_LENGTH = 15;
     private final int RET_STRING_ARRAY_LENGTH = 10;
-    private final int RET_QUEUE_ARRAY_LENGTH = 2;
+    private  int RET_QUEUE_ARRAY_LENGTH = 2;
+    private  BoardType boardType;
 
     public StatisticsInfoConsumer(AlertDialogUpdate alertDialogUpdate) {
         this.alertDialogUpdate = alertDialogUpdate;
@@ -64,14 +66,26 @@ public class StatisticsInfoConsumer implements InfoConsumer, DeviceManagerAware 
     }
 
     @Override
-    public void onStreamOpen(InputStream inputStream) {
+    public void onStreamOpen(InputStream inputStream, BoardType boardType) {
+        this.boardType = boardType;
+        if(boardType.equals(BoardType.D)){
+            BUF_LENGTH = 186;
+            RET_QUEUE_ARRAY_LENGTH = 2;
+        }
+        else{
+            BUF_LENGTH = 175;
+            RET_QUEUE_ARRAY_LENGTH = 0;
+        }
         assert deviceManager != null;
         assert this.inputStream == null;
         this.inputStream = new DataInputStream(inputStream);
         this.buf = new byte[BUF_LENGTH];
         this.stringArray = new String[STRING_ARRAY_LENGTH];
         this.retStringArray = new String[RET_STRING_ARRAY_LENGTH];
-        this.retQueueArray = new int[RET_QUEUE_ARRAY_LENGTH];
+        if(boardType.equals(BoardType.D)){
+            this.retQueueArray = new int[RET_QUEUE_ARRAY_LENGTH];
+        }
+
         cdl = new CountDownLatch(1);
         running = true;
         new Thread(new Runnable() {
@@ -120,9 +134,11 @@ public class StatisticsInfoConsumer implements InfoConsumer, DeviceManagerAware 
                 length++;
             }
         }
-        String tmpStringToParse = convertToString(InfoType.valueOf(InfoType.QUEUE.name()).getDimension(), InfoType.QUEUE.getOffset(), bufferLittleEndian.array());
-        int index = tmpStringToParse.indexOf('\0');
-        splitQueueString(tmpStringToParse.substring(0, index), "/");
+        if(boardType.equals(BoardType.D)) {
+            String tmpStringToParse = convertToString(InfoType.valueOf(InfoType.QUEUE.name()).getDimension(), InfoType.QUEUE.getOffset(), bufferLittleEndian.array());
+            int index = tmpStringToParse.indexOf('\0');
+            splitQueueString(tmpStringToParse.substring(0, index), "/");
+        }
     }
 
     private void splitQueueString(String stringToParse, String splitSymbol) {

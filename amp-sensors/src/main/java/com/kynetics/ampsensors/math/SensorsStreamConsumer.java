@@ -17,6 +17,7 @@
 
 package com.kynetics.ampsensors.math;
 
+
 import com.github.mikephil.charting.data.Entry;
 import com.kynetics.ampsensors.device.Coordinate;
 import com.kynetics.ampsensors.device.DataType;
@@ -63,7 +64,7 @@ public class SensorsStreamConsumer implements StreamConsumer, DeviceManagerAware
         this.inputStream = new DataInputStream(inputStream);
         this.buf = new byte[dataType.getBufferSize()];
         this.floatArray = new float[dataType.getSampleCount()];
-        this.dataMatrix = new float[Sensor.values().length][dataType.getDimension()];
+        this.dataMatrix = new float[com.kynetics.ampsensors.device.Sensor.values().length][dataType.getDimension()];
         this.cdl = new CountDownLatch(1);
         running = true;
         new Thread(new Runnable() {
@@ -115,9 +116,11 @@ public class SensorsStreamConsumer implements StreamConsumer, DeviceManagerAware
         this.transformData();
         for (int j = 0; j < dataMatrix.length; j++) {
             for (int i = 0; i < dataMatrix[j].length; i++) {
-                this.plotUpdate.onDataReady(new Entry(index, dataMatrix[j][i]), Sensor.values()[j], Coordinate.values()[i]);
+//                this.plotUpdate.onDataReady(new Entry(index, dataMatrix[j][i]), Sensor.values()[j], Coordinate.values()[i]);
             }
+
         }
         index++;
     }
+
 }

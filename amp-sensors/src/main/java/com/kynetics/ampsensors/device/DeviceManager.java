@@ -17,6 +17,8 @@
 
 package com.kynetics.ampsensors.device;
 
+import android.util.Log;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -30,6 +32,7 @@ public class DeviceManager {
     private FileChannel fileChannelImu;
     private FileChannel fileChannelStat;
     private InfoConsumer infoConsumer;
+    private InputConsumer inputConsumer;
 
 
     static class DeviceDescriptor {
@@ -45,19 +48,25 @@ public class DeviceManager {
     }
 
 
-    public DeviceManager(StreamConsumer streamConsumer, DeviceManagerAware deviceManagerAware, InfoConsumer infoConsumer) {
+    public DeviceManager(StreamConsumer streamConsumer, DeviceManagerAware deviceManagerAware, InfoConsumer infoConsumer, InputConsumer inputConsumer) {
         this.streamConsumer = streamConsumer;
         this.deviceManagerAware = deviceManagerAware;
         deviceManagerAware.onDeviceManagerCreated(this);
         this.infoConsumer = infoConsumer;
+        this.inputConsumer = inputConsumer;
     }
 
-    public void closeDevice() {
+    public void closeDevice(BoardType boardType) {
         if (this.deviceDescriptor != null) {
             this.streamConsumer.onStreamClosing();
             this.infoConsumer.onStreamClosing();
+            this.inputConsumer.onInputClosing();
             try {
-                fileChannelImu.close();
+                switch (boardType){
+                    case D:
+                        fileChannelImu.close();
+                        break;
+                }
                 fileChannelStat.close();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -71,40 +80,59 @@ public class DeviceManager {
 
     private native void closeDeviceNative(int fileDescriptor);
 
-    public void openDevice(DataType dataType, BootType bootType) {
+    public void openDevice(DataType dataType, BootType bootType, BoardType boardType) {
+        Log.d("******data type", "**********************************"+dataType);
         if (this.deviceDescriptor == null) {
             assert this.fileChannelImu == null;
             assert this.fileChannelStat == null;
-            this.deviceDescriptor = this.openDeviceNative();
-            try {
-                /*Channel for Imu*/
-                RandomAccessFile rafImu = new RandomAccessFile(this.deviceDescriptor.devicePathImu, "rw");
-                this.fileChannelImu = rafImu.getChannel();
-                String dataTypeString = ((dataType == DataType.VECTOR_DATA) ? "VECTOR" : "NORM");
-                byte[] byteArrayDataType = new byte[10];
-                System.arraycopy(dataTypeString.getBytes(), 0, byteArrayDataType, 0, dataTypeString.length());
-                byte[] byteArrayBootType = new byte[1];
-                byteArrayBootType[0] = (byte) ((bootType == BootType.ON_START) ? 1 : 0);
-                ByteArrayOutputStream outByteArray = new ByteArrayOutputStream();
-                outByteArray.write(byteArrayDataType);
-                outByteArray.write(byteArrayBootType);
+            this.deviceDescriptor = this.openDeviceNative(boardType);
 
-                byte bigByte[] = outByteArray.toByteArray();
-                Channels.newOutputStream(fileChannelImu).write(bigByte);
+            switch (boardType){
+                case D :
+                    try {
+                        /*Channel for Imu*/
+                        if(boardType.equals(BoardType.D)) {
+                            RandomAccessFile rafImu = new RandomAccessFile(this.deviceDescriptor.devicePathImu, "rw");
+                            this.fileChannelImu = rafImu.getChannel();
+                            String dataTypeString = ((dataType == DataType.VECTOR_DATA) ? "VECTOR" : "NORM");
+                            byte[] byteArrayDataType = new byte[10];
+                            System.arraycopy(dataTypeString.getBytes(), 0, byteArrayDataType, 0, dataTypeString.length());
+                            byte[] byteArrayBootType = new byte[1];
+                            byteArrayBootType[0] = (byte) ((bootType == BootType.ON_START) ? 1 : 0);
+                            ByteArrayOutputStream outByteArray = new ByteArrayOutputStream();
+                            outByteArray.write(byteArrayDataType);
+                            outByteArray.write(byteArrayBootType);
+                            byte bigByte[] = outByteArray.toByteArray();
+                            Channels.newOutputStream(fileChannelImu).write(bigByte);
+                            this.streamConsumer.onStreamOpen(Channels.newInputStream(fileChannelImu), dataType);
 
-                /*Channel for Statistics*/
-                RandomAccessFile rafStat = new RandomAccessFile(this.deviceDescriptor.devicePathStat, "r");
-                this.fileChannelStat = rafStat.getChannel();
+                            /*Channel for Statistics*/
+                            RandomAccessFile rafStat = new RandomAccessFile(this.deviceDescriptor.devicePathStat, "r");
+                            this.fileChannelStat = rafStat.getChannel();
+                            this.infoConsumer.onStreamOpen(Channels.newInputStream(fileChannelStat), boardType);
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case ULP:
+                    try {
+                        /*Channel for Statistics*/
+                        RandomAccessFile rafStat = new RandomAccessFile(this.deviceDescriptor.devicePathStat, "r");
+                        this.fileChannelStat = rafStat.getChannel();
+                        this.infoConsumer.onStreamOpen(Channels.newInputStream(fileChannelStat), boardType);
 
-            } catch (IOException e) {
-                e.printStackTrace();
+                        /*Input for sensor*/
+                        this.inputConsumer.onInputOpen();
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    break;
             }
-            this.infoConsumer.onStreamOpen(Channels.newInputStream(fileChannelStat));
-            this.streamConsumer.onStreamOpen(Channels.newInputStream(fileChannelImu), dataType);
-
         }
     }
 
-    private native DeviceDescriptor openDeviceNative();
+    private native DeviceDescriptor openDeviceNative(BoardType boardType);
 
 }
