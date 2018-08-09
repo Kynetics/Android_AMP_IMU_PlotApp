@@ -22,7 +22,7 @@ import com.github.mikephil.charting.components.XAxis;
 import com.kynetics.ampsensors.ui.PlotFragment;
 
 public enum Sensor {
-    ACC("accelerometer", "(g)"), MAG("magnetometer", "(µT)"), GYR("gyroscope", "(dps)");
+    ACC("accelerometer", "(m/s^2)"), MAG("magnetometer", "(µT)"), GYR("gyroscope", "(rad/s)");
     private final String label;
     private final String unit;
 

@@ -22,7 +22,7 @@ import com.github.mikephil.charting.data.LineDataSet;
 
 public enum Coordinate {
 
-    X_OR_NORM("x"), Y("y"), Z("z");
+    X_OR_NORM("x"), Y("y"), Z("z"), ROLL("roll"), PITCH("pitch"), YAW("yaw");
 
     private final String label;
 

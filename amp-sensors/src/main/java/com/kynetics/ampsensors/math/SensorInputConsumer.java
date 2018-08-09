@@ -4,7 +4,10 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Build;
 import android.os.Handler;
+import android.os.HandlerThread;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import com.kynetics.ampsensors.device.DeviceManager;
@@ -25,20 +28,17 @@ public class SensorInputConsumer implements InputConsumer , DeviceManagerAware ,
     private CountDownLatch cdl = null;
     private int indexEntry = PlotFragment.PLOT_POINTS;
     private SensorManager sensorManager;
-    private Sensor accelerometerSensor;
-    private Sensor magnetometerSensor;
-    private Sensor gyroscopeSensor;
+    private Sensor sensor;
     private float[] accelerometerValue = null;
     private float[] magnetometerValue = null;
     private float[] gyroscopeValue = null;
-    private PlotFragment.MyEntry myEntry ;
+    private PlotFragment.ChartEntry chartEntry;
 
-    public SensorInputConsumer(PlotFragment plotUpdate, SensorManager sensorManager, Sensor accelerometerSensor, Sensor magnetometerSensor, Sensor gyroscopeSensor) {
+    public SensorInputConsumer(PlotFragment plotUpdate, SensorManager sensorManager) {
         this.plotUpdate = plotUpdate;
         this.sensorManager = sensorManager;
-        this.accelerometerSensor = accelerometerSensor;
-        this.magnetometerSensor = magnetometerSensor;
-        this.gyroscopeSensor = gyroscopeSensor;
+        this.sensor = plotUpdate.getFragmentType().getSensor(sensorManager);
+
     }
 
     @Override
@@ -51,7 +51,7 @@ public class SensorInputConsumer implements InputConsumer , DeviceManagerAware ,
         this.accelerometerValue = new float[3];
         this.magnetometerValue = new float[3];
         this.gyroscopeValue =new float[3];
-        myEntry = new PlotFragment.MyEntry(++indexEntry);
+        chartEntry = new PlotFragment.ChartEntry(++indexEntry);
         this.cdl = new CountDownLatch(1);
         running = true;
 
@@ -59,9 +59,26 @@ public class SensorInputConsumer implements InputConsumer , DeviceManagerAware ,
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                sensorManager.registerListener(SensorInputConsumer.this, accelerometerSensor, SensorManager.SENSOR_DELAY_GAME);
-//                sensorManager.registerListener(SensorInputConsumer.this, magnetometerSensor, SensorManager.SENSOR_DELAY_GAME);
-//                sensorManager.registerListener(SensorInputConsumer.this, gyroscopeSensor, SensorManager.SENSOR_DELAY_GAME);
+                HandlerThread mHandlerThread = new HandlerThread("sensorThread");
+
+
+                mHandlerThread.start();
+
+                Handler handler_roberto = new Handler(mHandlerThread.getLooper());
+
+                sensorManager.registerListener(SensorInputConsumer.this, sensor, SensorManager.SENSOR_DELAY_UI, handler_roberto);
+               // sensorManager.unregisterListener(SensorInputConsumer.this, sensor);
+           //     sensorManager.registerListener(SensorInputConsumer.this, sensor, SensorManager.SENSOR_DELAY_GAME);
+           //     sensorManager.unregisterListener(SensorInputConsumer.this, sensor);
+           //     sensorManager.registerListener(SensorInputConsumer.this, sensor, SensorManager.SENSOR_DELAY_GAME);
+           //     sensorManager.unregisterListener(SensorInputConsumer.this, sensor);
+          //      sensorManager.registerListener(SensorInputConsumer.this, sensor, SensorManager.SENSOR_DELAY_GAME);
+//                sensorManager.registerListener(SensorInputConsumer.this, sensor, SensorManager.SENSOR_DELAY_GAME);
+//                sensorManager.registerListener(SensorInputConsumer.this, sensor, SensorManager.SENSOR_DELAY_GAME);
+//                sensorManager.registerListener(SensorInputConsumer.this, sensor, SensorManager.SENSOR_DELAY_GAME);
+//                sensorManager.registerListener(SensorInputConsumer.this, sensor, SensorManager.SENSOR_DELAY_GAME);
+//                sensorManager.registerListener(SensorInputConsumer.this, sensor, SensorManager.SENSOR_DELAY_GAME);
+
                 startDoStepThread();
             }
         }, 5000);
@@ -75,11 +92,11 @@ public class SensorInputConsumer implements InputConsumer , DeviceManagerAware ,
 
                 while (running) {
                     try {
-                        if(myEntry.isReady() ) {
+                        if(chartEntry.isReady() ) {
                             doStep();
-                            myEntry = new PlotFragment.MyEntry(++indexEntry);
+                            chartEntry = new PlotFragment.ChartEntry(++indexEntry);
                         }
-                        Thread.sleep(300);
+                        Thread.sleep(100);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -93,15 +110,13 @@ public class SensorInputConsumer implements InputConsumer , DeviceManagerAware ,
     @Override
     public void onInputClosing() {
         running = false;
-        sensorManager.unregisterListener(this, accelerometerSensor);
-//        sensorManager.unregisterListener(this, magnetometerSensor);
-//        sensorManager.unregisterListener(this, gyroscopeSensor);
+        sensorManager.unregisterListener(this, sensor);
     }
 
 
 
     private void doStep() throws IOException {
-        this.plotUpdate.onDataReady(myEntry);
+        this.plotUpdate.onDataReady(chartEntry);
     }
 
     @Override
@@ -125,16 +140,16 @@ public class SensorInputConsumer implements InputConsumer , DeviceManagerAware ,
 
         for (int i = 0; i < gravity.length; i++){
             gravity[i] = alpha * gravity[i] + (1 - alpha) * event.values[i];
-//            Log.d("fill acc", ""+event.values[i] - gravity[i]);
+            Log.d("fill acc", "");
             switch (i){
                 case 0:
-                    myEntry.setAcc_x(event.values[i] - gravity[i]);
+                    chartEntry.setX(event.values[i] - gravity[i]);
                     break;
                 case 1:
-                    myEntry.setAcc_y(event.values[i] - gravity[i]);
+                    chartEntry.setY(event.values[i] - gravity[i]);
                     break;
                 case 2:
-                    myEntry.setAcc_z(event.values[i] - gravity[i]);
+                    chartEntry.setZ(event.values[i] - gravity[i]);
                     break;
             }
         }
@@ -154,9 +169,13 @@ public class SensorInputConsumer implements InputConsumer , DeviceManagerAware ,
         // Convert to orientations
         SensorManager.getOrientation(remappedRotationMatrix, this.gyroscopeValue);
 
-        myEntry.setGyro_x(this.gyroscopeValue[0]);
-        myEntry.setGyro_y(this.gyroscopeValue[1]);
-        myEntry.setGyro_z(this.gyroscopeValue[2]);
+
+        Log.d("fill gyro", ""+sensorEvent.values[0]);
+        Log.d("fill gyro", ""+sensorEvent.values[1]);
+        Log.d("fill gyro", ""+sensorEvent.values[2]);
+        chartEntry.setX(sensorEvent.values[0]);
+        chartEntry.setY(sensorEvent.values[1]);
+        chartEntry.setZ(sensorEvent.values[2]);
     }
 
     private void updateMagnetometer(SensorEvent sensorEvent) {
@@ -166,13 +185,13 @@ public class SensorInputConsumer implements InputConsumer , DeviceManagerAware ,
             Log.d("fill mag", ""+(sensorEvent.values[i]));
             switch (i){
                 case 0:
-                    myEntry.setMag_x(sensorEvent.values[i]);
+                    chartEntry.setX(sensorEvent.values[i]);
                     break;
                 case 1:
-                    myEntry.setMag_y(sensorEvent.values[i]);
+                    chartEntry.setY(sensorEvent.values[i]);
                     break;
                 case 2:
-                    myEntry.setMag_z(sensorEvent.values[i]);
+                    chartEntry.setZ(sensorEvent.values[i]);
                     break;
             }
         }

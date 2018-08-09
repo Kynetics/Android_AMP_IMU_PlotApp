@@ -20,7 +20,7 @@ package com.kynetics.ampsensors.ui;
 import android.content.Context;
 import android.hardware.SensorManager;
 import android.os.Bundle;
-import android.os.StrictMode;
+import android.os.SystemClock;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
@@ -38,7 +38,6 @@ import com.kynetics.ampsensors.device.BoardType;
 import com.kynetics.ampsensors.device.BootType;
 import com.kynetics.ampsensors.device.DataType;
 import com.kynetics.ampsensors.device.DeviceManager;
-import com.kynetics.ampsensors.device.InputConsumer;
 import com.kynetics.ampsensors.math.SensorInputConsumer;
 import com.kynetics.ampsensors.math.SensorsStreamConsumer;
 import com.kynetics.ampsensors.math.StatisticsInfoConsumer;
@@ -51,12 +50,11 @@ public class MainActivity extends AppCompatActivity
 
     private DeviceManager currentDeviceManager = null;
     private DataType currentDataType = null;
+    private FragmentType currentFragmentType = null;
     private BootType bootType = null;
     private CustomAlertDialog customAlertDialog;
     private SensorManager sensorManager;
-    private android.hardware.Sensor accSensor;
-    private android.hardware.Sensor magSensor;
-    private android.hardware.Sensor gyroSensor;
+
     public BoardType boardType;
 
 
@@ -68,6 +66,7 @@ public class MainActivity extends AppCompatActivity
         if (this.currentDeviceManager != null) {
             this.currentDeviceManager.closeDevice(this.boardType);
             this.currentDataType = null;
+            this.currentFragmentType = null;
         }
         android.os.Process.killProcess(android.os.Process.myPid());
         System.exit(0);
@@ -84,17 +83,22 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+
 
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        accSensor = sensorManager.getDefaultSensor(android.hardware.Sensor.TYPE_ACCELEROMETER);
-        magSensor = sensorManager.getDefaultSensor(android.hardware.Sensor.TYPE_MAGNETIC_FIELD);
-        gyroSensor = sensorManager.getDefaultSensor(android.hardware.Sensor.TYPE_GYROSCOPE);
-
 
         String testSensor = getSensorInfo(sensorManager);
         this.boardType = testSensor.equals("") ? BoardType.D : BoardType.ULP;
-        Log.d("MainActivity", "board type "+boardType);
+
+
+        switch(this.boardType){
+            case ULP:
+                setContentView(R.layout.ulp_main);
+                break;
+            case D:
+                setContentView(R.layout.ulp_main);
+                break;
+        }
         this.customAlertDialog = new CustomAlertDialog(this, boardType);
 
 
@@ -117,13 +121,18 @@ public class MainActivity extends AppCompatActivity
                 exit();
             }
         });
+//        SystemClock.sleep(2000);
 
         this.bootType = BootType.ON_START;
-
         if (savedInstanceState == null) {
-//            switchFragment(new NormPlotFragment(), DataType.NORM_DATA, this.bootType, this.boardType);
-            switchFragment(new VectorPlotFragment(), DataType.VECTOR_DATA, this.bootType, this.boardType);
-
+            switch(this.boardType){
+                case ULP:
+                    switchFragment(new AccelerometerPlotFragment(), DataType.VECTOR_DATA, this.bootType, this.boardType);
+                    break;
+                case D:
+                    switchFragment(new NormPlotFragment(), DataType.NORM_DATA, this.bootType, this.boardType);
+                    break;
+            }
         }
 
 
@@ -151,7 +160,6 @@ public class MainActivity extends AppCompatActivity
                         | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                         | View.SYSTEM_UI_FLAG_FULLSCREEN
                         | View.SYSTEM_UI_FLAG_IMMERSIVE);
-
     }
 
 
@@ -159,7 +167,11 @@ public class MainActivity extends AppCompatActivity
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         int id = item.getItemId();
-        if ((id == R.id.nav_module && currentDataType == DataType.NORM_DATA) || (id == R.id.nav_raw && currentDataType == DataType.VECTOR_DATA)) {
+        if ((id == R.id.nav_module && currentDataType == DataType.NORM_DATA)
+                || (id == R.id.nav_raw && currentDataType == DataType.VECTOR_DATA
+                ||id == R.id.nav_accelerometer && currentFragmentType == FragmentType.ACC
+                || id == R.id.nav_magnetometer && currentFragmentType == FragmentType.MAG
+                || id == R.id.nav_gyroscope && currentFragmentType == FragmentType.GYR)) {
             DrawerLayout drawer = findViewById(R.id.drawer_layout);
             drawer.closeDrawer(GravityCompat.START);
             return true;
@@ -168,14 +180,29 @@ public class MainActivity extends AppCompatActivity
             currentDeviceManager.closeDevice(this.boardType);
             currentDeviceManager = null;
             currentDataType = null;
+            currentFragmentType = null;
         }
-        if (id == R.id.nav_module) {
-            switchFragment(new NormPlotFragment(), DataType.NORM_DATA, BootType.ON_START, this.boardType);
-        } else if (id == R.id.nav_raw) {
-            switchFragment(new VectorPlotFragment(), DataType.VECTOR_DATA, BootType.ON_START, this.boardType);
-        } else if (id == R.id.nav_exit) {
-            this.exit();
+        switch(id){
+            case R.id.nav_module:
+                switchFragment(new NormPlotFragment(), DataType.NORM_DATA, BootType.ON_START, this.boardType);
+                break;
+            case R.id.nav_raw:
+                switchFragment(new VectorPlotFragment(), DataType.VECTOR_DATA, BootType.ON_START, this.boardType);
+                break;
+            case R.id.nav_accelerometer:
+                switchFragment(new AccelerometerPlotFragment(), DataType.VECTOR_DATA, BootType.ON_START, this.boardType);
+                break;
+            case R.id.nav_magnetometer:
+                switchFragment(new MagnetometerPlotFragment(), DataType.VECTOR_DATA, BootType.ON_START, this.boardType);
+                break;
+            case R.id.nav_gyroscope:
+                switchFragment(new GyroscopePlotFragment(), DataType.VECTOR_DATA, BootType.ON_START, this.boardType);
+                break;
+            case R.id.nav_exit:
+                this.exit();
+                break;
         }
+
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
@@ -204,10 +231,11 @@ public class MainActivity extends AppCompatActivity
         Log.d("board", "switchFragment "+boardType);
         SensorsStreamConsumer asc = new SensorsStreamConsumer(fragment);
         StatisticsInfoConsumer ssc = new StatisticsInfoConsumer(this.customAlertDialog);
-        SensorInputConsumer sensorInputConsumer = new SensorInputConsumer(fragment, sensorManager, accSensor, magSensor, gyroSensor);
+        SensorInputConsumer sensorInputConsumer = new SensorInputConsumer(fragment, sensorManager);
         this.currentDeviceManager = new DeviceManager(asc, asc, ssc, sensorInputConsumer);
         this.currentDeviceManager.openDevice(dataType, bootType, boardType);
         this.currentDataType = dataType;
+        this.currentFragmentType = fragment.getFragmentType();
         this.bootType = BootType.ON_RESUME;
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
         fragmentTransaction.replace(R.id.frame, fragment);

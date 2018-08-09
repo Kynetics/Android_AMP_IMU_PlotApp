@@ -86,11 +86,11 @@ public class SensorsStreamConsumer implements StreamConsumer, DeviceManagerAware
     @Override
     public void onStreamClosing() {
         running = false;
-        try {
-            cdl.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            cdl.await();
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
         this.inputStream = null;
     }
 

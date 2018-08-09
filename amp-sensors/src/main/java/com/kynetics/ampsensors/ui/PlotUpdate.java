@@ -25,5 +25,5 @@ import java.util.List;
 
 public interface PlotUpdate {
     void onDataReady(List<Entry> entry, Sensor sensor, Coordinate[] coordinate);
-    default void onDataReady(PlotFragment.MyEntry entry){}
+    default void onDataReady(PlotFragment.ChartEntry entry){}
 }

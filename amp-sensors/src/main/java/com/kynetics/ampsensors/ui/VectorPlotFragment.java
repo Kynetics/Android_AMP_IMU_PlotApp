@@ -24,4 +24,9 @@ public class VectorPlotFragment extends PlotFragment {
     protected DataType getDataType() {
         return DataType.VECTOR_DATA;
     }
+
+    @Override
+    public FragmentType getFragmentType() {
+        return FragmentType.VECTOR;
+    }
 }

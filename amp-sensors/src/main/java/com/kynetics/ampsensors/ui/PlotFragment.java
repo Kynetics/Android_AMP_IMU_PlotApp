@@ -44,6 +44,7 @@ public abstract class PlotFragment extends Fragment implements PlotUpdate {
     private LineChart lineChartMag;
     private LineChart lineChartGyro;
     public static final int PLOT_POINTS = 30;
+    private List<LineChart> charts = null;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -54,26 +55,48 @@ public abstract class PlotFragment extends Fragment implements PlotUpdate {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.plot_fragment, container, false);
         this.lineChartAcc = view.findViewById(R.id.chartAcc);
-//        this.lineChartMag = view.findViewById(R.id.chartMag);
-//        this.lineChartGyro = view.findViewById(R.id.chartGyro);
-        List<LineChart> charts = Arrays.asList(this.lineChartAcc);//, this.lineChartMag, this.lineChartGyro);
+        this.lineChartMag = view.findViewById(R.id.chartMag);
+        this.lineChartGyro = view.findViewById(R.id.chartGyro);
+        charts = Arrays.asList(this.lineChartAcc, this.lineChartMag, this.lineChartGyro);
+
+        switch (this.getFragmentType()){
+            case ACC:
+                view.findViewById(R.id.chartMag).setVisibility(View.GONE);
+                view.findViewById(R.id.chartGyro).setVisibility(View.GONE);
+                break;
+            case MAG:
+                view.findViewById(R.id.chartAcc).setVisibility(View.GONE);
+                view.findViewById(R.id.chartGyro).setVisibility(View.GONE);
+                break;
+            case GYR:
+                view.findViewById(R.id.chartMag).setVisibility(View.GONE);
+                view.findViewById(R.id.chartAcc).setVisibility(View.GONE);
+                break;
+        }
+
         for (int s = 0; s < charts.size(); s++) {
             LineChart chart = charts.get(s);
             Sensor.values()[s].configureAxis(chart.getXAxis());
-            chart.setVisibleYRangeMaximum(10, YAxis.AxisDependency.LEFT);
             chart.getDescription().setEnabled(false);
-            chart.setScaleEnabled(false);
-            chart.setPinchZoom(false);
+            chart.setPinchZoom(true);
             chart.setDoubleTapToZoomEnabled(false);
             LineData lineData = new LineData();
             for (int i = 0; i < getDataType().getDimension(); i++) {
                 LineDataSet lineDataSet = null;
-                if(this.getDataType().equals(DataType.NORM_DATA)){
-                    lineDataSet = new LineDataSet(new ArrayList<>(), Sensor.values()[s].getLabel() + " " + Sensor.values()[s].getUnit());
+                switch(this.getDataType()){
+                    case NORM_DATA:
+                        lineDataSet = new LineDataSet(new ArrayList<>(), Sensor.values()[s].getLabel() + " " + Sensor.values()[s].getUnit());
+                        break;
+                    case VECTOR_DATA:
+                        if(PlotFragment.this.getFragmentType().equals(FragmentType.GYR)){
+                            lineDataSet = new LineDataSet(new ArrayList<>(), Sensor.values()[s].getLabel() + " " + Coordinate.values()[i+3].getLabel() + " " + Sensor.values()[s].getUnit());
+                        }
+                        else{
+                            lineDataSet = new LineDataSet(new ArrayList<>(), Sensor.values()[s].getLabel() + " " + Coordinate.values()[i].getLabel() + " " + Sensor.values()[s].getUnit());
+                        }
+                        break;
                 }
-                else {
-                    lineDataSet = new LineDataSet(new ArrayList<>(), Sensor.values()[s].getLabel() + " " + Coordinate.values()[i].getLabel() + " " + Sensor.values()[s].getUnit());
-                }
+
                 Coordinate.values()[i].configureDataSet(lineDataSet);
                 for (int k = 0; k < PLOT_POINTS; k++) {
                     lineDataSet.addEntry(new Entry(k, 0));
@@ -88,130 +111,87 @@ public abstract class PlotFragment extends Fragment implements PlotUpdate {
 
     protected abstract DataType getDataType();
 
-    @Override
-    public void onDataReady(List<Entry>  entryList, Sensor sensor, Coordinate[] coordinate) {
-        Activity parentActivity = getActivity();
-        if(parentActivity != null){
-             parentActivity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                _onDataReady(entryList, sensor, coordinate);
-            }
-        });
-        }
-    }
+    public abstract FragmentType getFragmentType();
 
     @Override
-    public void onDataReady(PlotFragment.MyEntry entry) {
+    public void onDataReady(List<Entry>  entryList, Sensor sensor, Coordinate[] coordinate) {
         Activity parentActivity = getActivity();
         if(parentActivity != null){
             parentActivity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-
-                    LineData lineData = PlotFragment.this.lineChartAcc.getLineData();
-                    ILineDataSet lineDataSet = lineData.getDataSetByIndex(0);
-                    lineDataSet.removeFirst();
-                    lineDataSet.addEntry(new Entry(entry.getIndex(), entry.getAcc_x()));
-                    lineData.notifyDataChanged();
-
-                    lineDataSet = lineData.getDataSetByIndex(1);
-                    lineDataSet.removeFirst();
-                    lineDataSet.addEntry(new Entry(entry.getIndex(), entry.getAcc_y()));
-                    lineData.notifyDataChanged();
-
-                    lineDataSet = lineData.getDataSetByIndex(2);
-                    lineDataSet.removeFirst();
-                    lineDataSet.addEntry(new Entry(entry.getIndex(), entry.getAcc_z()));
-                    lineData.notifyDataChanged();
-
-                    PlotFragment.this.lineChartAcc.notifyDataSetChanged();
-                    PlotFragment.this.lineChartAcc.invalidate();
-
-//
-//                    lineData = PlotFragment.this.lineChartGyro.getLineData();
-//                    lineDataSet = lineData.getDataSetByIndex(0);
-//                    lineDataSet.removeFirst();
-//                    lineDataSet.addEntry(new Entry(entry.getIndex(), entry.getGyro_x()));
-//                    lineData.notifyDataChanged();
-//
-//                    lineDataSet = lineData.getDataSetByIndex(1);
-//                    lineDataSet.removeFirst();
-//                    lineDataSet.addEntry(new Entry(entry.getIndex(), entry.getGyro_y()));
-//
-//                    PlotFragment.this.lineChartGyro.notifyDataSetChanged();
-//                    PlotFragment.this.lineChartGyro.invalidate();
-//
-//
-//                    lineData = PlotFragment.this.lineChartMag.getLineData();
-//                    lineDataSet = lineData.getDataSetByIndex(0);
-//                    lineDataSet.removeFirst();
-//                    lineDataSet.addEntry(new Entry(entry.getIndex(), entry.getMag_x()));
-//                    lineData.notifyDataChanged();
-//
-//                    lineDataSet = lineData.getDataSetByIndex(1);
-//                    lineDataSet.removeFirst();
-//                    lineDataSet.addEntry(new Entry(entry.getIndex(), entry.getMag_y()));
-//                    lineData.notifyDataChanged();
-//
-//                    lineDataSet = lineData.getDataSetByIndex(2);
-//                    lineDataSet.removeFirst();
-//                    lineDataSet.addEntry(new Entry(entry.getIndex(), entry.getMag_z()));
-//                    lineData.notifyDataChanged();
-//
-//                    PlotFragment.this.lineChartMag.notifyDataSetChanged();
-//                    PlotFragment.this.lineChartMag.invalidate();         lineData.notifyDataChanged();
-//
-//                    lineDataSet = lineData.getDataSetByIndex(2);
-//                    lineDataSet.removeFirst();
-//                    lineDataSet.addEntry(new Entry(entry.getIndex(), entry.getGyro_z()));
-//                    lineData.notifyDataChanged();
-//
-//                    PlotFragment.this.lineChartGyro.notifyDataSetChanged();
-//                    PlotFragment.this.lineChartGyro.invalidate();
-//
-//
-//                    lineData = PlotFragment.this.lineChartMag.getLineData();
-//                    lineDataSet = lineData.getDataSetByIndex(0);
-//                    lineDataSet.removeFirst();
-//                    lineDataSet.addEntry(new Entry(entry.getIndex(), entry.getMag_x()));
-//                    lineData.notifyDataChanged();
-//
-//                    lineDataSet = lineData.getDataSetByIndex(1);
-//                    lineDataSet.removeFirst();
-//                    lineDataSet.addEntry(new Entry(entry.getIndex(), entry.getMag_y()));
-//                    lineData.notifyDataChanged();
-//
-//                    lineDataSet = lineData.getDataSetByIndex(2);
-//                    lineDataSet.removeFirst();
-//                    lineDataSet.addEntry(new Entry(entry.getIndex(), entry.getMag_z()));
-//                    lineData.notifyDataChanged();
-//
-//                    PlotFragment.this.lineChartMag.notifyDataSetChanged();
-//                    PlotFragment.this.lineChartMag.invalidate();
-
-
+                    _onDataReady(entryList, sensor, coordinate);
                 }
             });
         }
     }
 
+    @Override
+    public void onDataReady(ChartEntry entry) {
+        Activity parentActivity = getActivity();
+        if(parentActivity != null){
+            parentActivity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    LineData lineData;
+                    ILineDataSet lineDataSet;
+                    switch(PlotFragment.this.getFragmentType()) {
 
-    public static class MyEntry{
+                        case ACC:
+                            updateLineChart(entry, PlotFragment.this.lineChartAcc);
+                        break;
+                        case MAG:
+                            updateLineChart(entry, PlotFragment.this.lineChartMag);
+                            break;
+
+                        case GYR:
+                            updateLineChart(entry, PlotFragment.this.lineChartGyro);
+                            break;
+
+                        case NORM:
+                            updateLineChart(entry, PlotFragment.this.lineChartAcc);
+                            updateLineChart(entry, PlotFragment.this.lineChartMag);
+                            updateLineChart(entry, PlotFragment.this.lineChartGyro);
+                            break;
+                        case VECTOR:
+                            updateLineChart(entry, PlotFragment.this.lineChartAcc);
+                            updateLineChart(entry, PlotFragment.this.lineChartMag);
+                            updateLineChart(entry, PlotFragment.this.lineChartGyro);
+                            break;
+                    }
+                }
+            });
+        }
+    }
+
+    private void updateLineChart(ChartEntry entry, LineChart lineChart) {
+        LineData lineData = lineChart.getLineData();
+        ILineDataSet lineDataSet = lineData.getDataSetByIndex(0);
+        lineDataSet.removeFirst();
+        lineDataSet.addEntry(new Entry(entry.getIndex(), entry.getX()));
+        lineData.notifyDataChanged();
+
+        lineDataSet = lineData.getDataSetByIndex(1);
+        lineDataSet.removeFirst();
+        lineDataSet.addEntry(new Entry(entry.getIndex(), entry.getY()));
+        lineData.notifyDataChanged();
+
+        lineDataSet = lineData.getDataSetByIndex(2);
+        lineDataSet.removeFirst();
+        lineDataSet.addEntry(new Entry(entry.getIndex(), entry.getZ()));
+        lineData.notifyDataChanged();
+
+        lineChart.notifyDataSetChanged();
+        lineChart.invalidate();
+    }
+
+    public static class ChartEntry {
         private final int index;
-        private  Float acc_x;
-        private  Float acc_y;
-        private  Float acc_z;
+        private  Float x;
+        private  Float y;
+        private  Float z;
 
-        private  Float mag_x = new Float(0);
-        private  Float mag_y = new Float(0);
-        private  Float mag_z = new Float(0);
-
-        private  Float gyro_x = new Float(0);
-        private  Float gyro_y = new Float(0);
-        private  Float gyro_z= new Float(0);
-
-        public MyEntry(int index) {
+        public ChartEntry(int index) {
             this.index = index;
         }
 
@@ -219,88 +199,38 @@ public abstract class PlotFragment extends Fragment implements PlotUpdate {
             return index;
         }
 
-        public float getAcc_x() {
-            return acc_x;
+        public Float getX() {
+            return x;
         }
 
-        public void setAcc_x(float acc_x) {
-            this.acc_x = acc_x;
+        public void setX(Float x) {
+            this.x = x;
         }
 
-        public float getAcc_y() {
-            return acc_y;
+        public Float getY() {
+            return y;
         }
 
-        public void setAcc_y(float acc_y) {
-            this.acc_y = acc_y;
+        public void setY(Float y) {
+            this.y = y;
         }
 
-        public float getAcc_z() {
-            return acc_z;
+        public Float getZ() {
+            return z;
         }
 
-        public void setAcc_z(float acc_z) {
-            this.acc_z = acc_z;
-        }
-
-        public float getMag_x() {
-            return mag_x;
-        }
-
-        public void setMag_x(float mag_x) {
-            this.mag_x = mag_x;
-        }
-
-        public float getMag_y() {
-            return mag_y;
-        }
-
-        public void setMag_y(float mag_y) {
-            this.mag_y = mag_y;
-        }
-
-        public float getMag_z() {
-            return mag_z;
-        }
-
-        public void setMag_z(float mag_z) {
-            this.mag_z = mag_z;
-        }
-
-        public float getGyro_x() {
-            return gyro_x;
-        }
-
-        public void setGyro_x(float gyro_x) {
-            this.gyro_x = gyro_x;
-        }
-
-        public float getGyro_y() {
-            return gyro_y;
-        }
-
-        public void setGyro_y(float gyro_y) {
-            this.gyro_y = gyro_y;
-        }
-
-        public float getGyro_z() {
-            return gyro_z;
-        }
-
-        public void setGyro_z(float gyro_z) {
-            this.gyro_z = gyro_z;
+        public void setZ(Float z) {
+            this.z = z;
         }
 
         public boolean isReady(){
-            return acc_x != null && acc_y != null && acc_z != null &&
-                    gyro_x != null && gyro_y != null && gyro_z != null &&
-                    mag_x != null && mag_y != null && mag_z != null;
+            return x != null && y != null && z != null;
         }
     }
+
+
     private void _onDataReady(List<Entry>  entryList, Sensor sensor, Coordinate[] coordinate) {
-//        for(Entry entry : entryList) {
         for (int i = 0; i < entryList.size(); i++) {
-            Log.d("PlotFragment", "" + entryList.get(i) + "\n" + sensor + "\n" + coordinate[i%3].ordinal() + "\n");
             LineChart chart = null;
             switch (sensor) {
                 case ACC:
@@ -323,7 +253,5 @@ public abstract class PlotFragment extends Fragment implements PlotUpdate {
             chart.invalidate();
 
         }
-
     }
-
 }
