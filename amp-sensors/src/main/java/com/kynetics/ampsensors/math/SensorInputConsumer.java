@@ -62,7 +62,7 @@ public class SensorInputConsumer implements InputConsumer , DeviceManagerAware ,
         mHandlerThread.start();
 
         Handler handler = new Handler(mHandlerThread.getLooper());
-        sensorManager.registerListener(SensorInputConsumer.this, sensor, SensorManager.SENSOR_DELAY_NORMAL, null);
+        sensorManager.registerListener(SensorInputConsumer.this, sensor, SensorManager.SENSOR_DELAY_UI, null);
         new Thread(new Runnable() {
             @Override
             public void run() {
