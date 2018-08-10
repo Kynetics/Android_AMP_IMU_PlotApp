@@ -127,12 +127,7 @@ public class MainActivity extends AppCompatActivity
         if (savedInstanceState == null) {
             switch(this.boardType){
                 case ULP:
-                    new Handler().postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            switchFragment(new AccelerometerPlotFragment(), DataType.VECTOR_DATA, bootType, boardType);
-                        }
-                    }, 5000);
+                    switchFragment(new AccelerometerPlotFragment(), DataType.VECTOR_DATA, bootType, boardType);
                     break;
                 case D:
                     switchFragment(new NormPlotFragment(), DataType.NORM_DATA, this.bootType, this.boardType);
