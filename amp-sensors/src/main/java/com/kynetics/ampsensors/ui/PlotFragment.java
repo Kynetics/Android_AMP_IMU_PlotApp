@@ -37,12 +37,15 @@ import com.kynetics.ampsensors.device.Sensor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 public abstract class PlotFragment extends Fragment implements PlotUpdate {
 
     private LineChart lineChartAcc;
     private LineChart lineChartMag;
     private LineChart lineChartGyro;
+    private LineChart chartToUpdate;
     public static final int PLOT_POINTS = 30;
     private List<LineChart> charts = null;
 
@@ -63,14 +66,17 @@ public abstract class PlotFragment extends Fragment implements PlotUpdate {
             case ACC:
                 view.findViewById(R.id.chartMag).setVisibility(View.GONE);
                 view.findViewById(R.id.chartGyro).setVisibility(View.GONE);
+                chartToUpdate = lineChartAcc;
                 break;
             case MAG:
                 view.findViewById(R.id.chartAcc).setVisibility(View.GONE);
                 view.findViewById(R.id.chartGyro).setVisibility(View.GONE);
+                chartToUpdate = lineChartMag;
                 break;
             case GYR:
                 view.findViewById(R.id.chartMag).setVisibility(View.GONE);
                 view.findViewById(R.id.chartAcc).setVisibility(View.GONE);
+                chartToUpdate = lineChartGyro;
                 break;
         }
 
@@ -129,8 +135,8 @@ public abstract class PlotFragment extends Fragment implements PlotUpdate {
     @Override
     public void onDataReady(ChartEntry entry) {
         Activity parentActivity = getActivity();
-        if(parentActivity != null){
-            parentActivity.runOnUiThread(new Runnable() {
+        if(chartToUpdate != null){
+            chartToUpdate.post(new Runnable() {
                 @Override
                 public void run() {
                     LineData lineData;
@@ -223,9 +229,6 @@ public abstract class PlotFragment extends Fragment implements PlotUpdate {
             this.z = z;
         }
 
-        public boolean isReady(){
-            return x != null && y != null && z != null;
-        }
     }
 
 

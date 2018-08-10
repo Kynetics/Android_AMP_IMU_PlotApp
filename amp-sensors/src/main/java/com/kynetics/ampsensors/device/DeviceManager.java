@@ -57,43 +57,47 @@ public class DeviceManager {
     }
 
     public void closeDevice(BoardType boardType) {
-        if (this.deviceDescriptor != null) {
-            this.streamConsumer.onStreamClosing();
-            this.infoConsumer.onStreamClosing();
-            this.inputConsumer.onInputClosing();
-            try {
-                switch (boardType){
-                    case D:
-                        fileChannelImu.close();
-                        break;
+
+                if (deviceDescriptor != null) {
+                    streamConsumer.onStreamClosing();
+                    infoConsumer.onStreamClosing();
+                    inputConsumer.onInputClosing();
+                    try {
+                        switch (boardType) {
+                            case D:
+                                fileChannelImu.close();
+                                break;
+                        }
+                        fileChannelStat.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    closeDeviceNative(deviceDescriptor.fileDescriptor);
+                    deviceDescriptor = null;
+                    fileChannelImu = null;
+                    fileChannelStat = null;
                 }
-                fileChannelStat.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            this.closeDeviceNative(this.deviceDescriptor.fileDescriptor);
-            this.deviceDescriptor = null;
-            this.fileChannelImu = null;
-            this.fileChannelStat = null;
-        }
+
+
     }
 
     private native void closeDeviceNative(int fileDescriptor);
 
     public void openDevice(DataType dataType, BootType bootType, BoardType boardType) {
-        Log.d("******data type", "**********************************"+dataType);
-        if (this.deviceDescriptor == null) {
-            assert this.fileChannelImu == null;
-            assert this.fileChannelStat == null;
-            this.deviceDescriptor = this.openDeviceNative(boardType);
+
+                     Log.d("******data type", "**********************************"+dataType);
+        if (deviceDescriptor == null) {
+            assert fileChannelImu == null;
+            assert fileChannelStat == null;
+            deviceDescriptor = openDeviceNative(boardType);
 
             switch (boardType){
                 case D :
                     try {
                         /*Channel for Imu*/
                         if(boardType.equals(BoardType.D)) {
-                            RandomAccessFile rafImu = new RandomAccessFile(this.deviceDescriptor.devicePathImu, "rw");
-                            this.fileChannelImu = rafImu.getChannel();
+                            RandomAccessFile rafImu = new RandomAccessFile(deviceDescriptor.devicePathImu, "rw");
+                            fileChannelImu = rafImu.getChannel();
                             String dataTypeString = ((dataType == DataType.VECTOR_DATA) ? "VECTOR" : "NORM");
                             byte[] byteArrayDataType = new byte[10];
                             System.arraycopy(dataTypeString.getBytes(), 0, byteArrayDataType, 0, dataTypeString.length());
@@ -104,12 +108,12 @@ public class DeviceManager {
                             outByteArray.write(byteArrayBootType);
                             byte bigByte[] = outByteArray.toByteArray();
                             Channels.newOutputStream(fileChannelImu).write(bigByte);
-                            this.streamConsumer.onStreamOpen(Channels.newInputStream(fileChannelImu), dataType);
+                            streamConsumer.onStreamOpen(Channels.newInputStream(fileChannelImu), dataType);
 
                             /*Channel for Statistics*/
-                            RandomAccessFile rafStat = new RandomAccessFile(this.deviceDescriptor.devicePathStat, "r");
-                            this.fileChannelStat = rafStat.getChannel();
-                            this.infoConsumer.onStreamOpen(Channels.newInputStream(fileChannelStat), boardType);
+                            RandomAccessFile rafStat = new RandomAccessFile(deviceDescriptor.devicePathStat, "r");
+                            fileChannelStat = rafStat.getChannel();
+                            infoConsumer.onStreamOpen(Channels.newInputStream(fileChannelStat), boardType);
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -118,12 +122,12 @@ public class DeviceManager {
                 case ULP:
                     try {
                         /*Channel for Statistics*/
-                        RandomAccessFile rafStat = new RandomAccessFile(this.deviceDescriptor.devicePathStat, "r");
-                        this.fileChannelStat = rafStat.getChannel();
-                        this.infoConsumer.onStreamOpen(Channels.newInputStream(fileChannelStat), boardType);
+                        RandomAccessFile rafStat = new RandomAccessFile(deviceDescriptor.devicePathStat, "r");
+                        fileChannelStat = rafStat.getChannel();
+                        infoConsumer.onStreamOpen(Channels.newInputStream(fileChannelStat), boardType);
 
                         /*Input for sensor*/
-                        this.inputConsumer.onInputOpen();
+                        inputConsumer.onInputOpen();
 
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -131,6 +135,8 @@ public class DeviceManager {
                     break;
             }
         }
+
+
     }
 
     private native DeviceDescriptor openDeviceNative(BoardType boardType);

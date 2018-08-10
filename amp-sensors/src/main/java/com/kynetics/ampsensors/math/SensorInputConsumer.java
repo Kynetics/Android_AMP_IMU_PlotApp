@@ -17,6 +17,8 @@ import com.kynetics.ampsensors.ui.PlotFragment;
 import com.kynetics.ampsensors.ui.PlotUpdate;
 
 import java.io.IOException;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 
 
@@ -32,7 +34,8 @@ public class SensorInputConsumer implements InputConsumer , DeviceManagerAware ,
     private float[] accelerometerValue = null;
     private float[] magnetometerValue = null;
     private float[] gyroscopeValue = null;
-    private PlotFragment.ChartEntry chartEntry;
+    private final BlockingQueue<PlotFragment.ChartEntry> blockingQueue = new ArrayBlockingQueue<>(1);
+
 
     public SensorInputConsumer(PlotFragment plotUpdate, SensorManager sensorManager) {
         this.plotUpdate = plotUpdate;
@@ -51,60 +54,31 @@ public class SensorInputConsumer implements InputConsumer , DeviceManagerAware ,
         this.accelerometerValue = new float[3];
         this.magnetometerValue = new float[3];
         this.gyroscopeValue =new float[3];
-        chartEntry = new PlotFragment.ChartEntry(++indexEntry);
         this.cdl = new CountDownLatch(1);
         running = true;
 
-        Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                HandlerThread mHandlerThread = new HandlerThread("sensorThread");
+        HandlerThread mHandlerThread = new HandlerThread("sensorThread");
 
+        mHandlerThread.start();
 
-                mHandlerThread.start();
-
-                Handler handler_roberto = new Handler(mHandlerThread.getLooper());
-
-                sensorManager.registerListener(SensorInputConsumer.this, sensor, SensorManager.SENSOR_DELAY_UI, handler_roberto);
-               // sensorManager.unregisterListener(SensorInputConsumer.this, sensor);
-           //     sensorManager.registerListener(SensorInputConsumer.this, sensor, SensorManager.SENSOR_DELAY_GAME);
-           //     sensorManager.unregisterListener(SensorInputConsumer.this, sensor);
-           //     sensorManager.registerListener(SensorInputConsumer.this, sensor, SensorManager.SENSOR_DELAY_GAME);
-           //     sensorManager.unregisterListener(SensorInputConsumer.this, sensor);
-          //      sensorManager.registerListener(SensorInputConsumer.this, sensor, SensorManager.SENSOR_DELAY_GAME);
-//                sensorManager.registerListener(SensorInputConsumer.this, sensor, SensorManager.SENSOR_DELAY_GAME);
-//                sensorManager.registerListener(SensorInputConsumer.this, sensor, SensorManager.SENSOR_DELAY_GAME);
-//                sensorManager.registerListener(SensorInputConsumer.this, sensor, SensorManager.SENSOR_DELAY_GAME);
-//                sensorManager.registerListener(SensorInputConsumer.this, sensor, SensorManager.SENSOR_DELAY_GAME);
-//                sensorManager.registerListener(SensorInputConsumer.this, sensor, SensorManager.SENSOR_DELAY_GAME);
-
-                startDoStepThread();
-            }
-        }, 5000);
-
-    }
-
-    private void startDoStepThread() {
+        Handler handler = new Handler(mHandlerThread.getLooper());
+        sensorManager.registerListener(SensorInputConsumer.this, sensor, SensorManager.SENSOR_DELAY_NORMAL, null);
         new Thread(new Runnable() {
             @Override
             public void run() {
 
                 while (running) {
                     try {
-                        if(chartEntry.isReady() ) {
-                            doStep();
-                            chartEntry = new PlotFragment.ChartEntry(++indexEntry);
-                        }
-                        Thread.sleep(100);
+                        doStep();
+//                        Thread.sleep(100);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-
                 }
                 cdl.countDown();
             }
         }).start();
+
     }
 
     @Override
@@ -115,32 +89,34 @@ public class SensorInputConsumer implements InputConsumer , DeviceManagerAware ,
 
 
 
-    private void doStep() throws IOException {
+    private void doStep() throws IOException, InterruptedException {
+        final PlotFragment.ChartEntry chartEntry = blockingQueue.take();
         this.plotUpdate.onDataReady(chartEntry);
     }
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
+        Log.d("update ui", "33333333333333333");
         switch (sensorEvent.sensor.getType()){
             case Sensor.TYPE_ACCELEROMETER :
-                this.updateAccelerometer(sensorEvent);
+                blockingQueue.offer(this.updateAccelerometer(sensorEvent));
                 break;
             case Sensor.TYPE_MAGNETIC_FIELD :
-                this.updateMagnetometer(sensorEvent);
+                blockingQueue.offer(this.updateMagnetometer(sensorEvent));
                 break;
             case Sensor.TYPE_GYROSCOPE :
-                this.updateGyroscope(sensorEvent);
+                blockingQueue.offer(this.updateGyroscope(sensorEvent));
                 break;
         }
     }
 
-    private void updateAccelerometer(SensorEvent event) {
+    private PlotFragment.ChartEntry updateAccelerometer(SensorEvent event) {
         float alpha = (float) 0.8;
         float[] gravity = new float[3];
-
+        final  PlotFragment.ChartEntry chartEntry = new PlotFragment.ChartEntry(++indexEntry);
         for (int i = 0; i < gravity.length; i++){
             gravity[i] = alpha * gravity[i] + (1 - alpha) * event.values[i];
-            Log.d("fill acc", "");
+            Log.d("fill acc", "aaaa");
             switch (i){
                 case 0:
                     chartEntry.setX(event.values[i] - gravity[i]);
@@ -153,33 +129,23 @@ public class SensorInputConsumer implements InputConsumer , DeviceManagerAware ,
                     break;
             }
         }
+        return chartEntry;
     }
 
-    private void updateGyroscope(SensorEvent sensorEvent) {
-
-        float[] rotationMatrix = new float[16];
-        SensorManager.getRotationMatrixFromVector(
-                rotationMatrix, sensorEvent.values);
-        // Remap coordinate system
-        float[] remappedRotationMatrix = new float[16];
-        SensorManager.remapCoordinateSystem(rotationMatrix,
-                SensorManager.AXIS_X,
-                SensorManager.AXIS_Z,
-                remappedRotationMatrix);
-        // Convert to orientations
-        SensorManager.getOrientation(remappedRotationMatrix, this.gyroscopeValue);
-
+    private PlotFragment.ChartEntry updateGyroscope(SensorEvent sensorEvent) {
 
         Log.d("fill gyro", ""+sensorEvent.values[0]);
         Log.d("fill gyro", ""+sensorEvent.values[1]);
         Log.d("fill gyro", ""+sensorEvent.values[2]);
+        final PlotFragment.ChartEntry chartEntry = new PlotFragment.ChartEntry(++indexEntry);
         chartEntry.setX(sensorEvent.values[0]);
         chartEntry.setY(sensorEvent.values[1]);
         chartEntry.setZ(sensorEvent.values[2]);
+        return chartEntry;
     }
 
-    private void updateMagnetometer(SensorEvent sensorEvent) {
-
+    private PlotFragment.ChartEntry updateMagnetometer(SensorEvent sensorEvent) {
+        final PlotFragment.ChartEntry chartEntry = new PlotFragment.ChartEntry(++indexEntry);
         // get values for each axes X,Y,Z
         for(int i = 0; i<3; i++){
             Log.d("fill mag", ""+(sensorEvent.values[i]));
@@ -195,6 +161,7 @@ public class SensorInputConsumer implements InputConsumer , DeviceManagerAware ,
                     break;
             }
         }
+        return chartEntry;
     }
 
     @Override

@@ -20,6 +20,7 @@ package com.kynetics.ampsensors.ui;
 import android.content.Context;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.SystemClock;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.FragmentTransaction;
@@ -121,13 +122,17 @@ public class MainActivity extends AppCompatActivity
                 exit();
             }
         });
-//        SystemClock.sleep(2000);
 
         this.bootType = BootType.ON_START;
         if (savedInstanceState == null) {
             switch(this.boardType){
                 case ULP:
-                    switchFragment(new AccelerometerPlotFragment(), DataType.VECTOR_DATA, this.bootType, this.boardType);
+                    new Handler().postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            switchFragment(new AccelerometerPlotFragment(), DataType.VECTOR_DATA, bootType, boardType);
+                        }
+                    }, 5000);
                     break;
                 case D:
                     switchFragment(new NormPlotFragment(), DataType.NORM_DATA, this.bootType, this.boardType);
