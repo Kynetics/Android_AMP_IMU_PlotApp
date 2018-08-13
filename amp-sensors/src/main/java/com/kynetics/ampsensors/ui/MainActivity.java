@@ -100,7 +100,7 @@ public class MainActivity extends AppCompatActivity
                 setContentView(R.layout.ulp_main);
                 break;
             case D:
-                setContentView(R.layout.ulp_main);
+                setContentView(R.layout.d_main);
                 break;
         }
         this.customAlertDialog = new CustomAlertDialog(this, boardType);
@@ -146,8 +146,7 @@ public class MainActivity extends AppCompatActivity
                     public void onSystemUiVisibilityChange(int visibility) {
                         if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0) {
                             decorView.setSystemUiVisibility(
-                                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                                  View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                                             | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                                             | View.SYSTEM_UI_FLAG_IMMERSIVE);
                         }
@@ -155,8 +154,7 @@ public class MainActivity extends AppCompatActivity
                 });
 
         getWindow().getDecorView().setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+              View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                         | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                         | View.SYSTEM_UI_FLAG_IMMERSIVE);
     }

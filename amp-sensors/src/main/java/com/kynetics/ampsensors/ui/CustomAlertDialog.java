@@ -86,7 +86,7 @@ public class CustomAlertDialog extends Dialog implements AlertDialogUpdate, andr
         statStatus = findViewById(R.id.status_stat);
         imuName = findViewById(R.id.name_imu);
         imuStatus = findViewById(R.id.status_imu);
-        if(boardType.equals(BoardType.D)) {
+        if(boardType.equals(BoardType.ULP)) {
             horizontalBarChart = findViewById(R.id.horizontal_chart);
             horizontalBarChart.setVisibility(View.GONE);
         }
@@ -99,6 +99,11 @@ public class CustomAlertDialog extends Dialog implements AlertDialogUpdate, andr
 
         linlaHeaderProgress = (LinearLayout) findViewById(R.id.linlaHeaderProgress);
         linlaHeaderProgress.setVisibility(View.VISIBLE);
+
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_IMMERSIVE);
 
     }
 
