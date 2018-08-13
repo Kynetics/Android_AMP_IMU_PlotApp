@@ -31,7 +31,8 @@
         android:theme="@style/AppTheme">
 
 
-        <activity android:name="com.kynetics.ampsensors.ui.MainActivity">
+        <activity android:name="com.kynetics.ampsensors.ui.MainActivity"
+            android:screenOrientation="landscape">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
