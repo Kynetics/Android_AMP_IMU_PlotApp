@@ -56,22 +56,23 @@ public class DeviceManager {
         this.inputConsumer = inputConsumer;
     }
 
-    public void closeDevice(BoardType boardType) {
+    public void closeDevice(BoardType boardType) throws IOException {
 
                 if (deviceDescriptor != null) {
-                    streamConsumer.onStreamClosing();
-                    infoConsumer.onStreamClosing();
-                    inputConsumer.onInputClosing();
-                    try {
-                        switch (boardType) {
-                            case D:
-                                fileChannelImu.close();
-                                break;
-                        }
-                        fileChannelStat.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    switch(boardType){
+                        case D:
+                            streamConsumer.onStreamClosing();
+                            fileChannelImu.close();
+                            fileChannelStat.close();
+                            infoConsumer.onStreamClosing();
+                            break;
+                        case ULP:
+                            infoConsumer.onStreamClosing();
+                            inputConsumer.onInputClosing();
+                            fileChannelStat.close();
+                            break;
                     }
+
                     closeDeviceNative(deviceDescriptor.fileDescriptor);
                     deviceDescriptor = null;
                     fileChannelImu = null;
