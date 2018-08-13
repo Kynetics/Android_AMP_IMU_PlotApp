@@ -96,7 +96,6 @@ public class SensorInputConsumer implements InputConsumer , DeviceManagerAware ,
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
-        Log.d("update ui", "33333333333333333");
         switch (sensorEvent.sensor.getType()){
             case Sensor.TYPE_ACCELEROMETER :
                 blockingQueue.offer(this.updateAccelerometer(sensorEvent));
@@ -116,7 +115,6 @@ public class SensorInputConsumer implements InputConsumer , DeviceManagerAware ,
         final  PlotFragment.ChartEntry chartEntry = new PlotFragment.ChartEntry(++indexEntry);
         for (int i = 0; i < gravity.length; i++){
             gravity[i] = alpha * gravity[i] + (1 - alpha) * event.values[i];
-            Log.d("fill acc", "aaaa");
             switch (i){
                 case 0:
                     chartEntry.setX(event.values[i] - gravity[i]);
