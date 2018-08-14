@@ -22,11 +22,9 @@
     <group android:checkableBehavior="single">
         <item
             android:id="@+id/nav_module"
-            android:icon="@drawable/ic_module"
             android:title="Module" />
         <item
             android:id="@+id/nav_raw"
-            android:icon="@drawable/ic_raw"
             android:title="Raw" />
     </group>
 
@@ -34,7 +32,6 @@
         <menu>
             <item
                 android:id="@+id/nav_exit"
-                android:icon="@drawable/ic_exit"
                 android:title="Exit" />
         </menu>
     </item>
