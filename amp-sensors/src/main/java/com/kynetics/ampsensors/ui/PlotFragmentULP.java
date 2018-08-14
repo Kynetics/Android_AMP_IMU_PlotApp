@@ -31,15 +31,11 @@ import com.kynetics.ampsensors.R;
 import com.kynetics.ampsensors.device.Coordinate;
 import com.kynetics.ampsensors.device.Sensor;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 public abstract class PlotFragmentULP extends PlotFragment {
 
     private LineChart lineGeneralChart;
-    private LineChart chartToUpdate;
     public static final int PLOT_POINTS = 30;
-    private List<LineChart> charts = null;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -50,14 +46,11 @@ public abstract class PlotFragmentULP extends PlotFragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.plot_fragment_ulp, container, false);
         this.lineGeneralChart = view.findViewById(R.id.generalChart);
-
         int s = this.getFragmentType().ordinal();
-
-        LineChart chart = charts.get(s);
-        Sensor.values()[s].configureAxis(chart.getXAxis());
-        chart.getDescription().setEnabled(false);
-        chart.setPinchZoom(true);
-        chart.setDoubleTapToZoomEnabled(false);
+        Sensor.values()[s].configureAxis(lineGeneralChart.getXAxis());
+        this.lineGeneralChart.getDescription().setEnabled(false);
+        this.lineGeneralChart.setPinchZoom(true);
+        this.lineGeneralChart.setDoubleTapToZoomEnabled(false);
         LineData lineData = new LineData();
         for (int i = 0; i < getDataType().getDimension(); i++) {
             LineDataSet lineDataSet = null;
@@ -73,7 +66,7 @@ public abstract class PlotFragmentULP extends PlotFragment {
             }
             lineData.addDataSet(lineDataSet);
         }
-        chart.setData(lineData);
+        this.lineGeneralChart.setData(lineData);
 
         return view;
     }
@@ -87,8 +80,8 @@ public abstract class PlotFragmentULP extends PlotFragment {
     @Override
     public void onDataReady(ChartEntry entry) {
         Activity parentActivity = getActivity();
-        if(chartToUpdate != null){
-            chartToUpdate.post(new Runnable() {
+        if(this.lineGeneralChart != null){
+            this.lineGeneralChart.post(new Runnable() {
                 @Override
                 public void run() {
                     LineData lineData;
