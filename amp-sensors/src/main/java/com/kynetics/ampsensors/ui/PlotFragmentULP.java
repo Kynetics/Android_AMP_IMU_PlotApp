@@ -19,13 +19,10 @@ package com.kynetics.ampsensors.ui;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import com.github.mikephil.charting.charts.LineChart;
-import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
@@ -37,10 +34,8 @@ import com.kynetics.ampsensors.device.Sensor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 
-public abstract class PlotFragment extends Fragment implements PlotUpdate {
+public abstract class PlotFragmentULP extends PlotFragment {
 
     private LineChart lineChartAcc;
     private LineChart lineChartMag;
@@ -56,7 +51,7 @@ public abstract class PlotFragment extends Fragment implements PlotUpdate {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.plot_fragment, container, false);
+        View view = inflater.inflate(R.layout.plot_fragment_ulp, container, false);
         this.lineChartAcc = view.findViewById(R.id.chartAcc);
         this.lineChartMag = view.findViewById(R.id.chartMag);
         this.lineChartGyro = view.findViewById(R.id.chartGyro);
@@ -94,7 +89,7 @@ public abstract class PlotFragment extends Fragment implements PlotUpdate {
                         lineDataSet = new LineDataSet(new ArrayList<>(), Sensor.values()[s].getLabel() + " " + Sensor.values()[s].getUnit());
                         break;
                     case VECTOR_DATA:
-                        if(PlotFragment.this.getFragmentType().equals(FragmentType.GYR)){
+                        if(PlotFragmentULP.this.getFragmentType().equals(FragmentType.GYR)){
                             lineDataSet = new LineDataSet(new ArrayList<>(), Sensor.values()[s].getLabel() + " " + Coordinate.values()[i+3].getLabel() + " " + Sensor.values()[s].getUnit());
                         }
                         else{
@@ -115,22 +110,10 @@ public abstract class PlotFragment extends Fragment implements PlotUpdate {
         return view;
     }
 
-    protected abstract DataType getDataType();
-
-    public abstract FragmentType getFragmentType();
 
     @Override
-    public void onDataReady(Entry  entry, Sensor sensor, Coordinate coordinate) {
-        Activity parentActivity = getActivity();
-        Log.d("PlotFragment", "inDataReady");
-        if(parentActivity != null){
-            parentActivity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    _onDataReady(entry, sensor, coordinate);
-                }
-            });
-        }
+    public void onDataReady(Entry entry, Sensor sensor, Coordinate coordinate) {
+
     }
 
     @Override
@@ -142,28 +125,17 @@ public abstract class PlotFragment extends Fragment implements PlotUpdate {
                 public void run() {
                     LineData lineData;
                     ILineDataSet lineDataSet;
-                    switch(PlotFragment.this.getFragmentType()) {
+                    switch(PlotFragmentULP.this.getFragmentType()) {
 
                         case ACC:
-                            updateLineChart(entry, PlotFragment.this.lineChartAcc);
+                            updateLineChart(entry, PlotFragmentULP.this.lineChartAcc);
                         break;
                         case MAG:
-                            updateLineChart(entry, PlotFragment.this.lineChartMag);
+                            updateLineChart(entry, PlotFragmentULP.this.lineChartMag);
                             break;
 
                         case GYR:
-                            updateLineChart(entry, PlotFragment.this.lineChartGyro);
-                            break;
-
-                        case NORM:
-                            updateLineChart(entry, PlotFragment.this.lineChartAcc);
-                            updateLineChart(entry, PlotFragment.this.lineChartMag);
-                            updateLineChart(entry, PlotFragment.this.lineChartGyro);
-                            break;
-                        case VECTOR:
-                            updateLineChart(entry, PlotFragment.this.lineChartAcc);
-                            updateLineChart(entry, PlotFragment.this.lineChartMag);
-                            updateLineChart(entry, PlotFragment.this.lineChartGyro);
+                            updateLineChart(entry, PlotFragmentULP.this.lineChartGyro);
                             break;
                     }
                 }
@@ -191,6 +163,7 @@ public abstract class PlotFragment extends Fragment implements PlotUpdate {
         lineChart.notifyDataSetChanged();
         lineChart.invalidate();
     }
+
 
     public static class ChartEntry {
         private final int index;
@@ -232,26 +205,4 @@ public abstract class PlotFragment extends Fragment implements PlotUpdate {
 
     }
 
-
-    private void _onDataReady(Entry  entry, Sensor sensor, Coordinate coordinate) {
-        Log.d("PlotFragment", "_onDataReady");
-        LineChart chart = null;
-        switch (sensor) {
-            case ACC:
-                chart = this.lineChartAcc;
-                break;
-            case MAG:
-                chart = this.lineChartMag;
-                break;
-            case GYR:
-                chart = this.lineChartGyro;
-                break;
-        }
-        ILineDataSet lineDataSet = chart.getLineData().getDataSetByIndex(coordinate.ordinal());
-        lineDataSet.removeFirst();
-        lineDataSet.addEntry(entry);
-        chart.getLineData().notifyDataChanged();
-        chart.notifyDataSetChanged();
-        chart.invalidate();
-    }
 }

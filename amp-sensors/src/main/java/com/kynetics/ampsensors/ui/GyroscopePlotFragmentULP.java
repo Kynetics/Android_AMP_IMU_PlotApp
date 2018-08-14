@@ -5,7 +5,7 @@ import com.kynetics.ampsensors.device.Coordinate;
 import com.kynetics.ampsensors.device.DataType;
 import com.kynetics.ampsensors.device.Sensor;
 
-public class GyroscopePlotFragment extends PlotFragment {
+public class GyroscopePlotFragmentULP extends PlotFragmentULP {
     @Override
     protected DataType getDataType() {
         return DataType.VECTOR_DATA;
@@ -16,8 +16,4 @@ public class GyroscopePlotFragment extends PlotFragment {
         return FragmentType.GYR;
     }
 
-    @Override
-    public void onDataReady(Entry entry, Sensor sensor, Coordinate coordinate) {
-
-    }
 }

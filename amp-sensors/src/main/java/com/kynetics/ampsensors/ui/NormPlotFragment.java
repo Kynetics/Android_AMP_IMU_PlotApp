@@ -17,9 +17,12 @@
 
 package com.kynetics.ampsensors.ui;
 
+import com.github.mikephil.charting.data.Entry;
+import com.kynetics.ampsensors.device.Coordinate;
 import com.kynetics.ampsensors.device.DataType;
+import com.kynetics.ampsensors.device.Sensor;
 
-public class NormPlotFragment extends PlotFragment {
+public class NormPlotFragment extends PlotFragmentD {
 
     @Override
     protected DataType getDataType() {
@@ -30,4 +33,5 @@ public class NormPlotFragment extends PlotFragment {
     public FragmentType getFragmentType() {
         return FragmentType.NORM;
     }
+
 }

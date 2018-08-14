@@ -4,16 +4,15 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import com.kynetics.ampsensors.device.DeviceManager;
 import com.kynetics.ampsensors.device.DeviceManagerAware;
 import com.kynetics.ampsensors.device.InputConsumer;
 import com.kynetics.ampsensors.ui.PlotFragment;
+import com.kynetics.ampsensors.ui.PlotFragmentULP;
 import com.kynetics.ampsensors.ui.PlotUpdate;
 
 import java.io.IOException;
@@ -34,7 +33,7 @@ public class SensorInputConsumer implements InputConsumer , DeviceManagerAware ,
     private float[] accelerometerValue = null;
     private float[] magnetometerValue = null;
     private float[] gyroscopeValue = null;
-    private final BlockingQueue<PlotFragment.ChartEntry> blockingQueue = new ArrayBlockingQueue<>(1);
+    private final BlockingQueue<PlotFragmentULP.ChartEntry> blockingQueue = new ArrayBlockingQueue<>(1);
 
 
     public SensorInputConsumer(PlotFragment plotUpdate, SensorManager sensorManager) {
@@ -90,7 +89,7 @@ public class SensorInputConsumer implements InputConsumer , DeviceManagerAware ,
 
 
     private void doStep() throws IOException, InterruptedException {
-        final PlotFragment.ChartEntry chartEntry = blockingQueue.take();
+        final PlotFragmentULP.ChartEntry chartEntry = blockingQueue.take();
         this.plotUpdate.onDataReady(chartEntry);
     }
 
@@ -109,10 +108,10 @@ public class SensorInputConsumer implements InputConsumer , DeviceManagerAware ,
         }
     }
 
-    private PlotFragment.ChartEntry updateAccelerometer(SensorEvent event) {
+    private PlotFragmentULP.ChartEntry updateAccelerometer(SensorEvent event) {
         float alpha = (float) 0.8;
         float[] gravity = new float[3];
-        final  PlotFragment.ChartEntry chartEntry = new PlotFragment.ChartEntry(++indexEntry);
+        final  PlotFragmentULP.ChartEntry chartEntry = new PlotFragmentULP.ChartEntry(++indexEntry);
         for (int i = 0; i < gravity.length; i++){
             gravity[i] = alpha * gravity[i] + (1 - alpha) * event.values[i];
             switch (i){
@@ -130,20 +129,20 @@ public class SensorInputConsumer implements InputConsumer , DeviceManagerAware ,
         return chartEntry;
     }
 
-    private PlotFragment.ChartEntry updateGyroscope(SensorEvent sensorEvent) {
+    private PlotFragmentULP.ChartEntry updateGyroscope(SensorEvent sensorEvent) {
 
         Log.d("fill gyro", ""+sensorEvent.values[0]);
         Log.d("fill gyro", ""+sensorEvent.values[1]);
         Log.d("fill gyro", ""+sensorEvent.values[2]);
-        final PlotFragment.ChartEntry chartEntry = new PlotFragment.ChartEntry(++indexEntry);
+        final PlotFragmentULP.ChartEntry chartEntry = new PlotFragmentULP.ChartEntry(++indexEntry);
         chartEntry.setX(sensorEvent.values[0]);
         chartEntry.setY(sensorEvent.values[1]);
         chartEntry.setZ(sensorEvent.values[2]);
         return chartEntry;
     }
 
-    private PlotFragment.ChartEntry updateMagnetometer(SensorEvent sensorEvent) {
-        final PlotFragment.ChartEntry chartEntry = new PlotFragment.ChartEntry(++indexEntry);
+    private PlotFragmentULP.ChartEntry updateMagnetometer(SensorEvent sensorEvent) {
+        final PlotFragmentULP.ChartEntry chartEntry = new PlotFragmentULP.ChartEntry(++indexEntry);
         // get values for each axes X,Y,Z
         for(int i = 0; i<3; i++){
             Log.d("fill mag", ""+(sensorEvent.values[i]));

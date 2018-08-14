@@ -62,9 +62,10 @@ public class DeviceManager {
                     switch(boardType){
                         case D:
                             streamConsumer.onStreamClosing();
+                            infoConsumer.onStreamClosing();
                             fileChannelImu.close();
                             fileChannelStat.close();
-                            infoConsumer.onStreamClosing();
+
                             break;
                         case ULP:
                             infoConsumer.onStreamClosing();
@@ -86,7 +87,7 @@ public class DeviceManager {
 
     public void openDevice(DataType dataType, BootType bootType, BoardType boardType) {
 
-                     Log.d("******data type", "**********************************"+dataType);
+        Log.d("******data type", "**********************************"+dataType);
         if (deviceDescriptor == null) {
             assert fileChannelImu == null;
             assert fileChannelStat == null;
@@ -94,11 +95,13 @@ public class DeviceManager {
 
             switch (boardType){
                 case D :
+                    Log.d("DeviceManager", "board type "+boardType);
                     try {
                         /*Channel for Imu*/
                         if(boardType.equals(BoardType.D)) {
                             RandomAccessFile rafImu = new RandomAccessFile(deviceDescriptor.devicePathImu, "rw");
                             fileChannelImu = rafImu.getChannel();
+                            Log.d("DeviceManager", "channel imu");
                             String dataTypeString = ((dataType == DataType.VECTOR_DATA) ? "VECTOR" : "NORM");
                             byte[] byteArrayDataType = new byte[10];
                             System.arraycopy(dataTypeString.getBytes(), 0, byteArrayDataType, 0, dataTypeString.length());
@@ -110,7 +113,7 @@ public class DeviceManager {
                             byte bigByte[] = outByteArray.toByteArray();
                             Channels.newOutputStream(fileChannelImu).write(bigByte);
                             streamConsumer.onStreamOpen(Channels.newInputStream(fileChannelImu), dataType);
-
+                            Log.d("DeviceManager", "on stream open ");
                             /*Channel for Statistics*/
                             RandomAccessFile rafStat = new RandomAccessFile(deviceDescriptor.devicePathStat, "r");
                             fileChannelStat = rafStat.getChannel();

@@ -86,10 +86,8 @@ public class CustomAlertDialog extends Dialog implements AlertDialogUpdate, andr
         statStatus = findViewById(R.id.status_stat);
         imuName = findViewById(R.id.name_imu);
         imuStatus = findViewById(R.id.status_imu);
-        if(boardType.equals(BoardType.ULP)) {
             horizontalBarChart = findViewById(R.id.horizontal_chart);
             horizontalBarChart.setVisibility(View.GONE);
-        }
         pieChart = findViewById(R.id.pie_chart);
         pieChart.setUsePercentValues(true);
         pieChart.setVisibility(View.GONE);
@@ -120,20 +118,16 @@ public class CustomAlertDialog extends Dialog implements AlertDialogUpdate, andr
 
     private void _onDataReady(String[] stringArray, List<PieEntry> retListPieChart, int[] queue) {
         if (drawable) {
+            Log.d("CustomAlert", "-onDataReady");
             linlaHeaderProgress.setVisibility(View.GONE);
             pieChart.setVisibility(View.VISIBLE);
+            setTaskNameAndStatus(stringArray);
             if(boardType.equals(BoardType.D)) {
                 horizontalBarChart.setVisibility(View.VISIBLE);
-            }
-            setTaskNameAndStatus(stringArray);
-
-
-            if(boardType.equals(BoardType.D)) {
                 ArrayList<BarEntry> entries = new ArrayList<>();
                 entries.add(new BarEntry(3, (int) queue[0]));
                 setHorizontalBarChart(entries, queue[1]);
             }
-
             PieDataSet set = new PieDataSet(retListPieChart, PIE_CHART_LABEL);
             setPieChart(set);
         }

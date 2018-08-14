@@ -18,6 +18,8 @@
 package com.kynetics.ampsensors.math;
 
 
+import android.util.Log;
+
 import com.github.mikephil.charting.data.Entry;
 import com.kynetics.ampsensors.device.Coordinate;
 import com.kynetics.ampsensors.device.DataType;
@@ -59,6 +61,7 @@ public class SensorsStreamConsumer implements StreamConsumer, DeviceManagerAware
 
     @Override
     public void onStreamOpen(InputStream inputStream, DataType dataType) {
+        Log.d("SensorStreamConsumer", "on stream open");
         assert deviceManager != null;
         assert this.inputStream == null;
         this.inputStream = new DataInputStream(inputStream);
@@ -86,11 +89,11 @@ public class SensorsStreamConsumer implements StreamConsumer, DeviceManagerAware
     @Override
     public void onStreamClosing() {
         running = false;
-//        try {
-//            cdl.await();
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
+        try {
+            cdl.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         this.inputStream = null;
     }
 
@@ -112,11 +115,13 @@ public class SensorsStreamConsumer implements StreamConsumer, DeviceManagerAware
     }
 
     private void doStep() throws IOException {
+        Log.d("SensorStreamConsumer", "do step");
         this.readChunk();
         this.transformData();
         for (int j = 0; j < dataMatrix.length; j++) {
             for (int i = 0; i < dataMatrix[j].length; i++) {
-//                this.plotUpdate.onDataReady(new Entry(index, dataMatrix[j][i]), Sensor.values()[j], Coordinate.values()[i]);
+                Log.d("SensorStreamConsumer", "\nindex : "+index+"\nvalue : "+dataMatrix[j][i]+"\nsensor "+Sensor.values()[j]+"\ncoord "+Coordinate.values()[i]);
+                this.plotUpdate.onDataReady(new Entry(index, dataMatrix[j][i]), Sensor.values()[j], Coordinate.values()[i]);
             }
 
         }

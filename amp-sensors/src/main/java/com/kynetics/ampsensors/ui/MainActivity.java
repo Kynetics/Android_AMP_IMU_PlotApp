@@ -135,7 +135,7 @@ public class MainActivity extends AppCompatActivity
         if (savedInstanceState == null) {
             switch(this.boardType){
                 case ULP:
-                    switchFragment(new AccelerometerPlotFragment(), DataType.VECTOR_DATA, bootType, boardType);
+                    switchFragment(new AccelerometerPlotFragmentULP(), DataType.VECTOR_DATA, bootType, boardType);
                     break;
                 case D:
                     switchFragment(new NormPlotFragment(), DataType.NORM_DATA, this.bootType, this.boardType);
@@ -196,13 +196,13 @@ public class MainActivity extends AppCompatActivity
                 switchFragment(new VectorPlotFragment(), DataType.VECTOR_DATA, BootType.ON_START, this.boardType);
                 break;
             case R.id.nav_accelerometer:
-                switchFragment(new AccelerometerPlotFragment(), DataType.VECTOR_DATA, BootType.ON_START, this.boardType);
+                switchFragment(new AccelerometerPlotFragmentULP(), DataType.VECTOR_DATA, BootType.ON_START, this.boardType);
                 break;
             case R.id.nav_magnetometer:
-                switchFragment(new MagnetometerPlotFragment(), DataType.VECTOR_DATA, BootType.ON_START, this.boardType);
+                switchFragment(new MagnetometerPlotFragmentULP(), DataType.VECTOR_DATA, BootType.ON_START, this.boardType);
                 break;
             case R.id.nav_gyroscope:
-                switchFragment(new GyroscopePlotFragment(), DataType.VECTOR_DATA, BootType.ON_START, this.boardType);
+                switchFragment(new GyroscopePlotFragmentULP(), DataType.VECTOR_DATA, BootType.ON_START, this.boardType);
                 break;
             case R.id.nav_exit:
                 try {

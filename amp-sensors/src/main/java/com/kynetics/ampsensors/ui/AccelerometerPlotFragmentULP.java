@@ -5,7 +5,7 @@ import com.kynetics.ampsensors.device.Coordinate;
 import com.kynetics.ampsensors.device.DataType;
 import com.kynetics.ampsensors.device.Sensor;
 
-public class AccelerometerPlotFragment extends PlotFragment {
+public class AccelerometerPlotFragmentULP extends PlotFragmentULP {
     @Override
     protected DataType getDataType() {
         return DataType.VECTOR_DATA;
