@@ -29,7 +29,6 @@ import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 import com.kynetics.ampsensors.R;
 import com.kynetics.ampsensors.device.Coordinate;
-import com.kynetics.ampsensors.device.DataType;
 import com.kynetics.ampsensors.device.Sensor;
 import java.util.ArrayList;
 import java.util.Arrays;
