@@ -120,13 +120,14 @@ public abstract class PlotFragment extends Fragment implements PlotUpdate {
     public abstract FragmentType getFragmentType();
 
     @Override
-    public void onDataReady(List<Entry>  entryList, Sensor sensor, Coordinate[] coordinate) {
+    public void onDataReady(Entry  entry, Sensor sensor, Coordinate coordinate) {
         Activity parentActivity = getActivity();
+        Log.d("PlotFragment", "inDataReady");
         if(parentActivity != null){
             parentActivity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    _onDataReady(entryList, sensor, coordinate);
+                    _onDataReady(entry, sensor, coordinate);
                 }
             });
         }
@@ -232,29 +233,25 @@ public abstract class PlotFragment extends Fragment implements PlotUpdate {
     }
 
 
-    private void _onDataReady(List<Entry>  entryList, Sensor sensor, Coordinate[] coordinate) {
-        for (int i = 0; i < entryList.size(); i++) {
-            LineChart chart = null;
-            switch (sensor) {
-                case ACC:
-                    chart = this.lineChartAcc;
-                    break;
-                case MAG:
-                    chart = this.lineChartMag;
-                    break;
-                case GYR:
-                    chart = this.lineChartGyro;
-                    break;
-            }
-            ILineDataSet lineDataSet = chart.getLineData().getDataSetByIndex(coordinate[i%3].ordinal());
-
-            lineDataSet.removeFirst();
-            lineDataSet.addEntry(entryList.get(i));
-
-            chart.getLineData().notifyDataChanged();
-            chart.notifyDataSetChanged();
-            chart.invalidate();
-
+    private void _onDataReady(Entry  entry, Sensor sensor, Coordinate coordinate) {
+        Log.d("PlotFragment", "_onDataReady");
+        LineChart chart = null;
+        switch (sensor) {
+            case ACC:
+                chart = this.lineChartAcc;
+                break;
+            case MAG:
+                chart = this.lineChartMag;
+                break;
+            case GYR:
+                chart = this.lineChartGyro;
+                break;
         }
+        ILineDataSet lineDataSet = chart.getLineData().getDataSetByIndex(coordinate.ordinal());
+        lineDataSet.removeFirst();
+        lineDataSet.addEntry(entry);
+        chart.getLineData().notifyDataChanged();
+        chart.notifyDataSetChanged();
+        chart.invalidate();
     }
 }

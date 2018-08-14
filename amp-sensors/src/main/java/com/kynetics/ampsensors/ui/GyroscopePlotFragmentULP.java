@@ -1,6 +1,9 @@
 package com.kynetics.ampsensors.ui;
 
+import com.github.mikephil.charting.data.Entry;
+import com.kynetics.ampsensors.device.Coordinate;
 import com.kynetics.ampsensors.device.DataType;
+import com.kynetics.ampsensors.device.Sensor;
 
 public class GyroscopePlotFragment extends PlotFragment {
     @Override
@@ -11,5 +14,10 @@ public class GyroscopePlotFragment extends PlotFragment {
     @Override
     public FragmentType getFragmentType() {
         return FragmentType.GYR;
+    }
+
+    @Override
+    public void onDataReady(Entry entry, Sensor sensor, Coordinate coordinate) {
+
     }
 }
