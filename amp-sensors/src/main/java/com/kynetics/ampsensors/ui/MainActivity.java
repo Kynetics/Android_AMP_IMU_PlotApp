@@ -44,6 +44,7 @@ import com.kynetics.ampsensors.math.SensorInputConsumer;
 import com.kynetics.ampsensors.math.SensorsStreamConsumer;
 import com.kynetics.ampsensors.math.StatisticsInfoConsumer;
 
+import java.io.IOException;
 import java.util.Iterator;
 
 
@@ -64,7 +65,7 @@ public class MainActivity extends AppCompatActivity
         System.loadLibrary("native-lib");
     }
 
-    private void exit() {
+    private void exit() throws IOException {
         if (this.currentDeviceManager != null) {
             this.currentDeviceManager.closeDevice(this.boardType);
             this.currentDataType = null;
@@ -122,7 +123,11 @@ public class MainActivity extends AppCompatActivity
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                exit();
+                try {
+                    exit();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         });
 
@@ -174,7 +179,11 @@ public class MainActivity extends AppCompatActivity
             return true;
         }
         if (this.currentDeviceManager != null) {
-            currentDeviceManager.closeDevice(this.boardType);
+            try {
+                currentDeviceManager.closeDevice(this.boardType);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             currentDeviceManager = null;
             currentDataType = null;
             currentFragmentType = null;
@@ -196,7 +205,11 @@ public class MainActivity extends AppCompatActivity
                 switchFragment(new GyroscopePlotFragment(), DataType.VECTOR_DATA, BootType.ON_START, this.boardType);
                 break;
             case R.id.nav_exit:
-                this.exit();
+                try {
+                    this.exit();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 break;
         }
 
@@ -220,7 +233,11 @@ public class MainActivity extends AppCompatActivity
     protected void onStop() {
         super.onStop();
         if (this.currentDeviceManager != null) {
-            this.currentDeviceManager.closeDevice( this.boardType);
+            try {
+                this.currentDeviceManager.closeDevice( this.boardType);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
