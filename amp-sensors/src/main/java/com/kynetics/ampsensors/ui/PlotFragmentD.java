@@ -62,10 +62,12 @@ public abstract class PlotFragmentD extends PlotFragment {
         List<LineChart> charts = Arrays.asList(this.lineChartAcc, this.lineChartMag, this.lineChartGyro);
         for (int s = 0; s < charts.size(); s++) {
             LineChart chart = charts.get(s);
+            chart.getDescription().setEnabled(false);
             Sensor.values()[s].configureAxis(chart.getXAxis());
             LineData lineData = new LineData();
             for (int i = 0; i < getDataType().getDimension(); i++) {
                 LineDataSet lineDataSet = new LineDataSet(new ArrayList<>(), Sensor.values()[s].getLabel() + " " + Coordinate.values()[i].getLabel());
+
                 Coordinate.values()[i].configureDataSet(lineDataSet);
                 for (int k = 0; k < PLOT_POINTS; k++) {
                     lineDataSet.addEntry(new Entry(k, 0));
