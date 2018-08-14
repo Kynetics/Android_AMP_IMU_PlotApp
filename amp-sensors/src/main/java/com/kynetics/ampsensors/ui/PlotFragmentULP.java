@@ -36,9 +36,7 @@ import java.util.List;
 
 public abstract class PlotFragmentULP extends PlotFragment {
 
-    private LineChart lineChartAcc;
-    private LineChart lineChartMag;
-    private LineChart lineChartGyro;
+    private LineChart lineGeneralChart;
     private LineChart chartToUpdate;
     public static final int PLOT_POINTS = 30;
     private List<LineChart> charts = null;
@@ -51,61 +49,32 @@ public abstract class PlotFragmentULP extends PlotFragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.plot_fragment_ulp, container, false);
-        this.lineChartAcc = view.findViewById(R.id.chartAcc);
-        this.lineChartMag = view.findViewById(R.id.chartMag);
-        this.lineChartGyro = view.findViewById(R.id.chartGyro);
-        charts = Arrays.asList(this.lineChartAcc, this.lineChartMag, this.lineChartGyro);
+        this.lineGeneralChart = view.findViewById(R.id.generalChart);
 
-        switch (this.getFragmentType()){
-            case ACC:
-                view.findViewById(R.id.chartMag).setVisibility(View.GONE);
-                view.findViewById(R.id.chartGyro).setVisibility(View.GONE);
-                chartToUpdate = lineChartAcc;
-                break;
-            case MAG:
-                view.findViewById(R.id.chartAcc).setVisibility(View.GONE);
-                view.findViewById(R.id.chartGyro).setVisibility(View.GONE);
-                chartToUpdate = lineChartMag;
-                break;
-            case GYR:
-                view.findViewById(R.id.chartMag).setVisibility(View.GONE);
-                view.findViewById(R.id.chartAcc).setVisibility(View.GONE);
-                chartToUpdate = lineChartGyro;
-                break;
-        }
+        int s = this.getFragmentType().ordinal();
 
-        for (int s = 0; s < charts.size(); s++) {
-            LineChart chart = charts.get(s);
-            Sensor.values()[s].configureAxis(chart.getXAxis());
-            chart.getDescription().setEnabled(false);
-            chart.setPinchZoom(true);
-            chart.setDoubleTapToZoomEnabled(false);
-            LineData lineData = new LineData();
-            for (int i = 0; i < getDataType().getDimension(); i++) {
-                LineDataSet lineDataSet = null;
-                switch(this.getDataType()){
-                    case NORM_DATA:
-                        lineDataSet = new LineDataSet(new ArrayList<>(), Sensor.values()[s].getLabel() + " " + Sensor.values()[s].getUnit());
-                        break;
-                    case VECTOR_DATA:
-                        if(PlotFragmentULP.this.getFragmentType().equals(FragmentType.GYR)){
-                            lineDataSet = new LineDataSet(new ArrayList<>(), Sensor.values()[s].getLabel() + " " + Coordinate.values()[i+3].getLabel() + " " + Sensor.values()[s].getUnit());
-                        }
-                        else{
-                            lineDataSet = new LineDataSet(new ArrayList<>(), Sensor.values()[s].getLabel() + " " + Coordinate.values()[i].getLabel() + " " + Sensor.values()[s].getUnit());
-                        }
-                        break;
-                }
-
-                Coordinate.values()[i].configureDataSet(lineDataSet);
-                for (int k = 0; k < PLOT_POINTS; k++) {
-                    lineDataSet.addEntry(new Entry(k, 0));
-
-                }
-                lineData.addDataSet(lineDataSet);
+        LineChart chart = charts.get(s);
+        Sensor.values()[s].configureAxis(chart.getXAxis());
+        chart.getDescription().setEnabled(false);
+        chart.setPinchZoom(true);
+        chart.setDoubleTapToZoomEnabled(false);
+        LineData lineData = new LineData();
+        for (int i = 0; i < getDataType().getDimension(); i++) {
+            LineDataSet lineDataSet = null;
+            if(PlotFragmentULP.this.getFragmentType().equals(FragmentType.GYR)){
+                lineDataSet = new LineDataSet(new ArrayList<>(), Sensor.values()[s].getLabel() + " " + Coordinate.values()[i+3].getLabel() + " " + Sensor.values()[s].getUlpUnit());
             }
-            chart.setData(lineData);
+            else{
+                lineDataSet = new LineDataSet(new ArrayList<>(), Sensor.values()[s].getLabel() + " " + Coordinate.values()[i].getLabel() + " " + Sensor.values()[s].getUlpUnit());
+            }
+            Coordinate.values()[i].configureDataSet(lineDataSet);
+            for (int k = 0; k < PLOT_POINTS; k++) {
+                lineDataSet.addEntry(new Entry(k, 0));
+            }
+            lineData.addDataSet(lineDataSet);
         }
+        chart.setData(lineData);
+
         return view;
     }
 
@@ -124,19 +93,7 @@ public abstract class PlotFragmentULP extends PlotFragment {
                 public void run() {
                     LineData lineData;
                     ILineDataSet lineDataSet;
-                    switch(PlotFragmentULP.this.getFragmentType()) {
-
-                        case ACC:
-                            updateLineChart(entry, PlotFragmentULP.this.lineChartAcc);
-                        break;
-                        case MAG:
-                            updateLineChart(entry, PlotFragmentULP.this.lineChartMag);
-                            break;
-
-                        case GYR:
-                            updateLineChart(entry, PlotFragmentULP.this.lineChartGyro);
-                            break;
-                    }
+                    updateLineChart(entry, PlotFragmentULP.this.lineGeneralChart);
                 }
             });
         }

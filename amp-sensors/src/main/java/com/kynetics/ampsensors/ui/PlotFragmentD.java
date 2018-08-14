@@ -66,8 +66,13 @@ public abstract class PlotFragmentD extends PlotFragment {
             Sensor.values()[s].configureAxis(chart.getXAxis());
             LineData lineData = new LineData();
             for (int i = 0; i < getDataType().getDimension(); i++) {
-                LineDataSet lineDataSet = new LineDataSet(new ArrayList<>(), Sensor.values()[s].getLabel() + " " + Coordinate.values()[i].getLabel());
-
+                LineDataSet lineDataSet = null;
+                if(s == FragmentType.GYR.ordinal() && this.getDataType() == DataType.VECTOR_DATA){
+                    lineDataSet = new LineDataSet(new ArrayList<>(), Sensor.values()[s].getLabel() + " " + Coordinate.values()[i+3].getLabel() + " " + Sensor.values()[s].getDUnit());
+                }
+                else{
+                    lineDataSet = new LineDataSet(new ArrayList<>(), Sensor.values()[s].getLabel() + " " + Coordinate.values()[i].getLabel()+ " " + Sensor.values()[s].getDUnit());
+                }
                 Coordinate.values()[i].configureDataSet(lineDataSet);
                 for (int k = 0; k < PLOT_POINTS; k++) {
                     lineDataSet.addEntry(new Entry(k, 0));

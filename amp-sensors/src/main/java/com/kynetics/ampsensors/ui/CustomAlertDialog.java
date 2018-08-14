@@ -156,7 +156,12 @@ public class CustomAlertDialog extends Dialog implements AlertDialogUpdate, andr
         pieChart.invalidate();
         pieChart.clear();
         pieChart.setData(data);
-        pieChart.setDrawEntryLabels(false);
+        if(this.boardType == BoardType.D) {
+            pieChart.setMinimumHeight(300);
+            pieChart.setDrawEntryLabels(true);
+        }
+        else
+            pieChart.setDrawEntryLabels(false);
         pieChart.setEntryLabelColor(Color.BLACK);
         pieChart.getDescription().setEnabled(false);
         pieChart.setTouchEnabled(false);

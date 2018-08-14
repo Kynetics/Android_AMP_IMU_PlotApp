@@ -22,21 +22,28 @@ import com.github.mikephil.charting.components.XAxis;
 import com.kynetics.ampsensors.ui.PlotFragment;
 
 public enum Sensor {
-    ACC("accelerometer", "(m/s^2)"), MAG("magnetometer", "(µT)"), GYR("gyroscope", "(rad/s)");
+    ACC("accelerometer", "(g)",  "(m/s^2)"), MAG("magnetometer", "(µT)",  "(µT)"), GYR("gyroscope", "(dps)" , "(rad/s)");
     private final String label;
-    private final String unit;
+    private final String d_unit;
+    private final String ulp_unit;
 
-    Sensor(String label, String unit) {
+    Sensor(String label, String d_unit, String ulp_unit) {
         this.label = label;
-        this.unit = unit;
+        this.d_unit = d_unit;
+        this.ulp_unit = ulp_unit;
+
     }
 
     public String getLabel() {
         return label;
     }
 
-    public String getUnit(){
-        return unit;
+    public String getDUnit(){
+        return d_unit;
+    }
+
+    public String getUlpUnit(){
+        return ulp_unit;
     }
 
     public void configureAxis(XAxis xAxis) {
