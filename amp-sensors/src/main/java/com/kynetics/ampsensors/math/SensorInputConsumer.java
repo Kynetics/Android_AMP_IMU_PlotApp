@@ -125,23 +125,10 @@ public class SensorInputConsumer implements InputConsumer , DeviceManagerAware ,
     }
 
     private PlotFragmentULP.ChartEntry updateAccelerometer(SensorEvent event) {
-        float alpha = (float) 0.8;
-        float[] gravity = new float[3];
         final  PlotFragmentULP.ChartEntry chartEntry = new PlotFragmentULP.ChartEntry(++indexEntry);
-        for (int i = 0; i < gravity.length; i++){
-            gravity[i] = alpha * gravity[i] + (1 - alpha) * event.values[i];
-            switch (i){
-                case 0:
-                    chartEntry.setX(event.values[i] - gravity[i]);
-                    break;
-                case 1:
-                    chartEntry.setY(event.values[i] - gravity[i]);
-                    break;
-                case 2:
-                    chartEntry.setZ(event.values[i] - gravity[i]);
-                    break;
-            }
-        }
+        chartEntry.setX(event.values[0] );
+        chartEntry.setY(event.values[1] );
+        chartEntry.setZ(event.values[2] );
         return chartEntry;
     }
 
