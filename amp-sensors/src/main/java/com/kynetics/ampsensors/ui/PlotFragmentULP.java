@@ -96,16 +96,19 @@ public abstract class PlotFragmentULP extends PlotFragment {
         LineData lineData = lineChart.getLineData();
         ILineDataSet lineDataSet = lineData.getDataSetByIndex(0);
         lineDataSet.removeFirst();
+        lineDataSet.setDrawValues(false);
         lineDataSet.addEntry(new Entry(entry.getIndex(), entry.getX()));
         lineData.notifyDataChanged();
 
         lineDataSet = lineData.getDataSetByIndex(1);
         lineDataSet.removeFirst();
+        lineDataSet.setDrawValues(false);
         lineDataSet.addEntry(new Entry(entry.getIndex(), entry.getY()));
         lineData.notifyDataChanged();
 
         lineDataSet = lineData.getDataSetByIndex(2);
         lineDataSet.removeFirst();
+        lineDataSet.setDrawValues(false);
         lineDataSet.addEntry(new Entry(entry.getIndex(), entry.getZ()));
         lineData.notifyDataChanged();
 
